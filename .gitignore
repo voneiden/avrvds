@@ -2,3 +2,7 @@
 vendor
 elm-stuff
 vendor
+app/data/*.json
+app/*.js
+app/*.map
+app/*.css
