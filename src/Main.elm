@@ -4,11 +4,15 @@ module Main exposing (..)
 import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
-import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, chipDefinitionDecoder)
+import Debug exposing (toString)
+import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, ChipPin, ChipPinout, PinoutType(..), chipDefinitionDecoder)
 import Html exposing (Html, a, button, div, h2, text)
-import Html.Attributes exposing (href, style)
+import Html.Attributes exposing (class, href, id, style)
 import Html.Events exposing (onClick)
 import Http
+import List exposing (concat, drop, length, map, take)
+import Maybe exposing (map2)
+import String exposing (fromInt)
 import Url
 
 -- MAIN
@@ -28,23 +32,27 @@ type alias Session =
     }
 
 -- MODEL
-type alias AppState =
+type alias State =
     { chipDefinition : ChipDefinition
-    , pinout : Int
+    , pinout: Int
+    , view : Int
+    , pin : Int
+    , variant : Int
     }
 
 type Model
-  = Failure Session
+  = Failed Session Http.Error
   | Loading Session
+  | Success Session State
   | Test1 Session
   | Test2 Session (Maybe String)
-  | Success Session AppState
+
 
 
 modelSession : Model -> Session
 modelSession model =
     case model of
-        Failure session -> session
+        Failed session _ -> session
         Loading session -> session
         Test1 session -> session
         Test2 session _ -> session
@@ -54,7 +62,7 @@ modelSession model =
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
       --(Loading, getDefinition)
-      (Test1 (Session key), Cmd.none)
+      (Loading <| Session key, getDefinition "ATtiny814")
 
 onUrlRequest : UrlRequest -> Msg
 onUrlRequest urlRequest = UrlRequested urlRequest
@@ -65,7 +73,7 @@ onUrlChange url = UrlChanged url
 type Msg
   = UrlRequested UrlRequest
   | UrlChanged Url.Url
-  | RequestDefinition
+  | RequestDefinition String
   | ReceiveDefinition (Result Http.Error ChipDefinition)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -83,18 +91,22 @@ update msg model =
                 (model, Nav.load(url))
 
     UrlChanged url->
-        (model, Cmd.none)
+        case model of
+            Test2 _ _ ->
+                (Test2 session (map2 (++) (Just "NAV!") url.fragment), Cmd.none )
+            _ ->
+                (model, Cmd.none)
 
-    RequestDefinition ->
-      (Loading session, getDefinition)
+    RequestDefinition definitionId ->
+      (Loading session, getDefinition definitionId)
 
     ReceiveDefinition result ->
       case result of
         Ok chipDefinition ->
-          (Success session (AppState chipDefinition  0), Cmd.none)
+          (Success session (State chipDefinition 0 0 0 0), Cmd.none)
 
-        Err _ ->
-          (Failure session, Cmd.none)
+        Err error ->
+          (Failed session error, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -109,7 +121,7 @@ subscriptions model =
 
 view : Model -> Document Msg
 view model =
-    { title = "Hello world"
+    { title = "AVR Visual Datasheet"
     , body = [
             div []
                 [ h2 [] [ text "Random Cats" ]
@@ -119,6 +131,37 @@ view model =
     }
 
 
+soicTopPins : List ChipPin -> List ChipPin
+soicTopPins pins =
+    let count = length pins // 2 in
+        drop count pins |> take count
+
+soicBottomPins : List ChipPin -> List ChipPin
+soicBottomPins pins =
+    take ((length pins) // 2) pins
+
+viewPin : ChipPin -> Html Msg
+viewPin pin =
+    div [ class "soic-pin"] [
+     div [ class "soic-pin-leg"] [ div [class "soic-pin-label"] [text <| fromInt pin.position ]],
+     div [ class "soic-pin-pad"] [ div [class "soic-pin-label"] [text pin.pad ]]
+     ]
+
+viewChip : ChipPinout -> Html Msg
+viewChip pinout =
+    case pinout.pinoutType of
+        SOIC ->
+            div [ id "chip-view", class "soic"] [
+                div [ class "soic-top"] <| map viewPin (soicTopPins pinout.pins),
+                div [ class "soic-middle"] [],
+                div [ class "soic-bottom"] <| map viewPin (soicBottomPins pinout.pins)
+            ]
+
+-- note on signal logic
+-- group by "function"
+-- name by "group" + index (if contains more than 1!)
+
+-- todo some kind of placement prioritizer function for signals. should be fun
 
 viewGif : Model -> Html Msg
 viewGif model =
@@ -135,10 +178,11 @@ viewGif model =
             Nothing ->
                 div [] [ text "Navigated to no hash"]
 
-    Failure _ ->
+    Failed _ error ->
       div []
-        [ text "I could not load a random cat for some reason. "
-        , button [ onClick RequestDefinition ] [ text "Try Again!" ]
+        [ text "I could not load a random cat for some reason:"
+        , text (toString error)
+        , button [ onClick <| RequestDefinition "ATtiny814" ] [ text "Try Again!" ]
         ]
 
     Loading _ ->
@@ -146,19 +190,19 @@ viewGif model =
 
     Success _ appState ->
       div []
-        [ button [ onClick RequestDefinition, style "display" "block" ] [ text "More Please!" ]
+        [ button [ onClick <| RequestDefinition "ATtiny814", style "display" "block" ] [ text "More Please!" ]
         , div [] [
             case get appState.pinout appState.chipDefinition.pinouts of
                 Nothing -> text "Nada"
-                Just pinout -> text pinout.name
+                Just pinout -> viewChip pinout
             ]
         ]
 
 
-getDefinition : Cmd Msg
-getDefinition =
+getDefinition : String -> Cmd Msg
+getDefinition definitionId =
   Http.get
-    { url = "/data/ATtiny814.json"
+    { url = "/data/" ++ definitionId ++ ".json"
     , expect = Http.expectJson ReceiveDefinition chipDefinitionDecoder
     }
 

@@ -1,0 +1,53 @@
+$pin-width: 20px;
+
+#chip-view {
+  &.soic {
+    display: inline-flex;
+    flex-direction: column;
+
+    .soic-top,
+    .soic-middle,
+    .soic-bottom {
+      display: flex;
+      flex-direction: row;
+    }
+    .soic-middle {
+      height: 50px;
+      border: 1px solid black;
+    }
+    .soic-pin {
+      display: flex;
+      justify-content: flex-start;
+      flex-basis: $pin-width;
+      flex-grow: 0;
+      //align-items: center;
+      div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      &:not(:last-child) {
+        margin-right: 10px;
+      }
+    }
+    .soic-pin-label {
+      writing-mode: vertical-rl;
+    }
+    .soic-top {
+      .soic-pin {
+        flex-direction: column-reverse;
+      }
+    }
+    .soic-bottom {
+      .soic-pin {
+        flex-direction: column;
+      }
+    }
+    .soic-pin-leg {
+      width: $pin-width;
+      height: 40px;
+      border: 1px solid black;
+    }
+  }
+}
