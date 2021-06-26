@@ -5,7 +5,8 @@ import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import Debug exposing (toString)
-import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, ChipPin, ChipPinout, PinoutType(..), chipDefinitionDecoder)
+import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, ChipPin, ChipPinout, Pad, PinoutType(..), Signal, chipDefinitionDecoder)
+import Dict exposing (Dict)
 import Html exposing (Html, a, button, div, h2, text)
 import Html.Attributes exposing (class, href, id, style)
 import Html.Events exposing (onClick)
@@ -131,14 +132,19 @@ view model =
     }
 
 
-soicTopPins : List ChipPin -> List ChipPin
-soicTopPins pins =
+soicRightPins : List ChipPin -> List ChipPin
+soicRightPins pins =
     let count = length pins // 2 in
         drop count pins |> take count
 
-soicBottomPins : List ChipPin -> List ChipPin
-soicBottomPins pins =
+soicLeftPins : List ChipPin -> List ChipPin
+soicLeftPins pins =
     take ((length pins) // 2) pins
+
+signalsByPad : ChipDefinition -> Dict Pad Signal
+signalsByPad definition =
+    Dict.empty
+
 
 viewPin : ChipPin -> Html Msg
 viewPin pin =
@@ -152,9 +158,11 @@ viewChip pinout =
     case pinout.pinoutType of
         SOIC ->
             div [ id "chip-view", class "soic"] [
-                div [ class "soic-top"] <| map viewPin (soicTopPins pinout.pins),
-                div [ class "soic-middle"] [],
-                div [ class "soic-bottom"] <| map viewPin (soicBottomPins pinout.pins)
+                div [ class "soic-left"] <| map viewPin (soicLeftPins pinout.pins),
+                div [ class "soic-middle"] [
+                    div [ class "soic-pin1-marker"] []
+                ],
+                div [ class "soic-right"] <| map viewPin (soicRightPins pinout.pins)
             ]
 
 -- note on signal logic

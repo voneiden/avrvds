@@ -1,19 +1,33 @@
 $pin-width: 20px;
+$pin-length: 40px;
 
 #chip-view {
   &.soic {
     display: inline-flex;
-    flex-direction: column;
+    flex-direction: row;
 
-    .soic-top,
+    .soic-left,
     .soic-middle,
-    .soic-bottom {
+    .soic-right {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
     }
     .soic-middle {
-      height: 50px;
+      width: 75px;
       border: 1px solid black;
+      .soic-pin1-marker {
+        height: 10px;
+        width: 10px;
+        border: 1px solid black;
+        border-radius: 5px;
+        margin-left: 10px;
+        margin-top: 10px;
+      }
+    }
+    .soic-left {
+      .soic-pin {
+        flex-direction: row-reverse;
+      }
     }
     .soic-pin {
       display: flex;
@@ -28,11 +42,8 @@ $pin-width: 20px;
       }
 
       &:not(:last-child) {
-        margin-right: 10px;
+        margin-bottom: 10px;
       }
-    }
-    .soic-pin-label {
-      writing-mode: vertical-rl;
     }
     .soic-top {
       .soic-pin {
@@ -45,8 +56,8 @@ $pin-width: 20px;
       }
     }
     .soic-pin-leg {
-      width: $pin-width;
-      height: 40px;
+      height: $pin-width;
+      width: $pin-length;
       border: 1px solid black;
     }
   }
