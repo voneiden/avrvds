@@ -5,15 +5,16 @@ import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import Debug exposing (toString)
-import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, ChipPin, ChipPinout, Pad, PinoutType(..), Signal, chipDefinitionDecoder)
-import Dict exposing (Dict)
+import Decoders.ChipDefinitionDecoder exposing (ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, DeviceModuleCategory(..), Pad(..), PinoutType(..), Signal, chipDefinitionDecoder, padToString)
+import Dict exposing (Dict, keys)
+import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, h2, text)
 import Html.Attributes exposing (class, href, id, style)
 import Html.Events exposing (onClick)
 import Http
-import List exposing (concat, drop, length, map, take)
-import Maybe exposing (map2)
-import String exposing (fromInt)
+import List exposing (append, concat, drop, filter, filterMap, length, map, member, reverse, sort, sortBy, take)
+import Maybe exposing (map2, withDefault)
+import String exposing (endsWith, fromInt, replace)
 import Url
 
 -- MAIN
@@ -125,8 +126,7 @@ view model =
     { title = "AVR Visual Datasheet"
     , body = [
             div []
-                [ h2 [] [ text "Random Cats" ]
-                , viewGif model
+                [ viewGif model
                 ]
         ]
     }
@@ -135,41 +135,179 @@ view model =
 soicRightPins : List ChipPin -> List ChipPin
 soicRightPins pins =
     let count = length pins // 2 in
-        drop count pins |> take count
+        drop count pins |> take count |> reverse
 
 soicLeftPins : List ChipPin -> List ChipPin
 soicLeftPins pins =
     take ((length pins) // 2) pins
 
-signalsByPad : ChipDefinition -> Dict Pad Signal
-signalsByPad definition =
-    Dict.empty
+
+getSignalsFromDefinition : ChipDefinition -> Maybe (List Signal)
+getSignalsFromDefinition definition =
+    let
+        moduleFilter : ChipDeviceModule -> Bool
+        moduleFilter m =
+            case m.group of
+                PORT -> True
+                ANALOG -> True
+                INTERFACE -> True
+                TIMER -> True
+                OTHER -> True
+                _ -> False
+    in
+        case get 0 definition.devices of
+            Nothing -> Nothing
+            Just device ->
+                map .instances (filter moduleFilter device.modules)
+                |> concat
+                |> filter (\i -> i.name /= "EVSYS")
+                |> map .signals
+                |> filterMap identity
+                |> concat
+                |> filter (\s -> s.group /= "PIN")
+                |> Just
+
+padSignals : Pad -> List Signal -> List Signal
+padSignals pad signals =
+    filter (\p -> p.pad == pad) signals
+
+isAlternativeSignal : Signal -> Bool
+isAlternativeSignal signal =
+    endsWith "_ALT" signal.function
 
 
-viewPin : ChipPin -> Html Msg
-viewPin pin =
-    div [ class "soic-pin"] [
-     div [ class "soic-pin-leg"] [ div [class "soic-pin-label"] [text <| fromInt pin.position ]],
-     div [ class "soic-pin-pad"] [ div [class "soic-pin-label"] [text pin.pad ]]
-     ]
+type alias SignalFit =
+    { pads : List Pad
+    , signals : List Signal
+    }
 
-viewChip : ChipPinout -> Html Msg
-viewChip pinout =
-    case pinout.pinoutType of
-        SOIC ->
-            div [ id "chip-view", class "soic"] [
-                div [ class "soic-left"] <| map viewPin (soicLeftPins pinout.pins),
-                div [ class "soic-middle"] [
-                    div [ class "soic-pin1-marker"] []
-                ],
-                div [ class "soic-right"] <| map viewPin (soicRightPins pinout.pins)
+signalGroupFitsPads : List Signal -> List Pad -> List Pad -> Maybe (List Pad)
+signalGroupFitsPads signals availablePads usedPads =
+    case signals of
+        [] -> Just usedPads
+        x::xs ->
+            if member x.pad availablePads then
+                signalGroupFitsPads xs (filter ((/=) x.pad) availablePads) (usedPads ++ [x.pad])
+            else
+                Nothing
+
+signalGroupsFitPads : List (List Signal) -> List Pad -> Maybe (List Pad, List Signal)
+signalGroupsFitPads signalGroups availablePads =
+    case signalGroups of
+        [] -> Nothing
+        x::xs ->
+            case signalGroupFitsPads x availablePads [] of
+                Nothing -> signalGroupsFitPads xs availablePads
+                Just usedPads ->
+                    let
+                        tmp = Debug.log ("Fitted" ++ toString x) (length x)
+                    in
+                        Just (filter (\p -> not (member p usedPads)) availablePads, x)
+
+fitSignalGroups : List (List Signal) -> List Pad -> List Pad -> List Signal
+fitSignalGroups signalGroups initPads pads =
+    case signalGroups of
+        [] -> []
+        signalGroups_ ->
+            case signalGroupsFitPads signalGroups_ pads of
+                Nothing ->
+                    if initPads == pads then
+                        let
+                            tmp = Debug.log ("FORCE FITTING REMAINING" ++ toString signalGroups_) (length signalGroups_)
+                        in
+                            concat signalGroups_
+                    else
+                        fitSignalGroups signalGroups_ initPads initPads
+                Just (remainingPads, fittedSignals) ->
+                    fittedSignals ++ fitSignalGroups (filter ((/=) fittedSignals) signalGroups) initPads remainingPads
+
+filterPortPads : List Pad -> List Pad
+filterPortPads pads =
+    let
+        isPort : Pad -> Bool
+        isPort pad =
+            case pad of
+                VDD -> False
+                GND -> False
+                _ ->  True
+    in
+        filter isPort pads
+
+getDefault : comparable -> Dict comparable v -> v -> v
+getDefault targetKey dict default =
+    withDefault default <| Dict.get targetKey dict
+
+sortSignals : List Pad -> List Signal -> List Signal
+sortSignals pads signals =
+    let
+
+        signalsGroupedByFunction = groupBy .function signals
+        functions = keys signalsGroupedByFunction
+        sortedFunctions = reverse <| sortBy (\f -> length <| getDefault f signalsGroupedByFunction []) functions
+        portPads = filterPortPads pads
+    in
+        fitSignalGroups (map (\f -> getDefault f signalsGroupedByFunction []) sortedFunctions) portPads portPads
+
+signalToString : Signal -> String
+signalToString signal =
+    let
+        prefix =
+            case signal.group of
+                "OUT" -> signal.function ++ "-" ++ signal.group
+                _ -> signal.group
+        result =
+            case signal.index of
+                    Nothing -> prefix
+                    Just index -> prefix ++ fromInt index
+    in
+        replace "_" "-" result
+
+
+viewPinSignal : Signal -> Html Msg
+viewPinSignal signal =
+    div [ class "pin-signal"] [
+        div [ class "pin-label" ] [
+            text <| signalToString signal
+        ]
+    ]
+
+viewPin : List Signal -> ChipPin -> Html Msg
+viewPin signals pin =
+    div [ class "pin"]
+        <| append
+            [
+             div [ class "pin-leg"] [ div [class "pin-label"] [text <| fromInt pin.position ]],
+             div [ class "pin-pad"] [ div [class "pin-label"] [text <| padToString pin.pad ]]
             ]
+            <| map viewPinSignal (padSignals pin.pad signals)
+
+
+viewChip : ChipPinout -> List Signal -> Html Msg
+viewChip pinout signals =
+    let
+        leftPins = soicLeftPins pinout.pins
+        rightPins = soicRightPins pinout.pins
+
+        leftPads = map .pad leftPins
+        rightPads = map .pad rightPins
+
+        leftSignals = sortSignals leftPads <| filter (\s -> member s.pad leftPads ) signals
+        rightSignals = sortSignals rightPads <| filter (\s -> member s.pad rightPads ) signals
+    in
+        case pinout.pinoutType of
+            SOIC ->
+                div [ id "chip-view", class "soic"] [
+                    div [ class "soic-left"] <| map (viewPin leftSignals) (soicLeftPins pinout.pins),
+                    div [ class "soic-middle"] [
+                        div [ class "pin1-marker"] []
+                    ],
+                    div [ class "soic-right"] <| map (viewPin rightSignals) (soicRightPins pinout.pins)
+                ]
 
 -- note on signal logic
 -- group by "function"
 -- name by "group" + index (if contains more than 1!)
 
--- todo some kind of placement prioritizer function for signals. should be fun
 
 viewGif : Model -> Html Msg
 viewGif model =
@@ -197,12 +335,15 @@ viewGif model =
       text "Loading..."
 
     Success _ appState ->
-      div []
-        [ button [ onClick <| RequestDefinition "ATtiny814", style "display" "block" ] [ text "More Please!" ]
-        , div [] [
+      div [] [
+        div [] [
             case get appState.pinout appState.chipDefinition.pinouts of
                 Nothing -> text "Nada"
-                Just pinout -> viewChip pinout
+                Just pinout ->
+                    case getSignalsFromDefinition appState.chipDefinition of
+                        Nothing -> text "Nada device"
+                        Just signals -> viewChip pinout (sortSignals (map .pad pinout.pins) signals)
+                        --Just signals -> viewChip pinout signals
             ]
         ]
 

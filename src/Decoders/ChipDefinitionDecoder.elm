@@ -75,14 +75,14 @@ chipPinoutDecoder =
 
 
 type alias ChipPin =
-    { pad : String
+    { pad : Pad
     , position : Int
     }
 
 chipPinDecoder : Decoder ChipPin
 chipPinDecoder =
     Decode.succeed ChipPin
-      |> required "pad" string
+      |> required "pad" (string |> andThen padDecoder)
       |> required "position" int
 
 
@@ -99,16 +99,37 @@ chipDeviceDecoder =
       |> required "name" string
       |> required "modules" (list chipDeviceModuleDecoder)
 
+type DeviceModuleCategory =
+    PORT | INTERFACE | ANALOG | TIMER | EVENT | LOGIC | PTC | OTHER
 
 type alias ChipDeviceModule =
     { name : String
+    , group : DeviceModuleCategory
     , instances : List Instance
     }
+moduleCategoryDecoder : String -> Decoder DeviceModuleCategory
+moduleCategoryDecoder name =
+    case name of
+        "PORT" -> Decode.succeed PORT
+        "TWI" -> Decode.succeed INTERFACE
+        "SPI" -> Decode.succeed INTERFACE
+        "USART" -> Decode.succeed INTERFACE
+        "ADC" -> Decode.succeed ANALOG
+        "AC" -> Decode.succeed ANALOG
+        "DAC" -> Decode.succeed ANALOG
+        "TCA" -> Decode.succeed TIMER
+        "TCB" -> Decode.succeed TIMER
+        "TCD" -> Decode.succeed TIMER
+        "EVSYS" -> Decode.succeed EVENT
+        "CCL" -> Decode.succeed LOGIC
+        "PTC" -> Decode.succeed PTC
+        _ -> Decode.succeed OTHER
 
 chipDeviceModuleDecoder : Decoder ChipDeviceModule
 chipDeviceModuleDecoder =
     Decode.succeed ChipDeviceModule
       |> required "name" string
+      |> required "name"  (string |> andThen moduleCategoryDecoder)
       |> required "instances" (list instanceDecoder)
 
 
@@ -151,6 +172,29 @@ padDecoder pad =
     "PB7" -> Decode.succeed PB7
     _ ->
         Decode.fail <| "Unsupported pad: " ++ pad
+
+padToString : Pad -> String
+padToString pad =
+    case pad of
+        VDD -> "VDD"
+        GND -> "GND"
+        PA0 -> "PA0"
+        PA1 -> "PA1"
+        PA2 -> "PA2"
+        PA3 -> "PA3"
+        PA4 -> "PA4"
+        PA5 -> "PA5"
+        PA6 -> "PA6"
+        PA7 -> "PA7"
+        PB0 -> "PB0"
+        PB1 -> "PB1"
+        PB2 -> "PB2"
+        PB3 -> "PB3"
+        PB4 -> "PB4"
+        PB5 -> "PB5"
+        PB6 -> "PB6"
+        PB7 -> "PB7"
+
 
 
 type alias Signal =

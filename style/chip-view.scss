@@ -15,7 +15,7 @@ $pin-length: 40px;
     .soic-middle {
       width: 75px;
       border: 1px solid black;
-      .soic-pin1-marker {
+      .pin1-marker {
         height: 10px;
         width: 10px;
         border: 1px solid black;
@@ -25,11 +25,11 @@ $pin-length: 40px;
       }
     }
     .soic-left {
-      .soic-pin {
+      .pin {
         flex-direction: row-reverse;
       }
     }
-    .soic-pin {
+    .pin {
       display: flex;
       justify-content: flex-start;
       flex-basis: $pin-width;
@@ -46,19 +46,30 @@ $pin-length: 40px;
       }
     }
     .soic-top {
-      .soic-pin {
+      .pin {
         flex-direction: column-reverse;
       }
     }
     .soic-bottom {
-      .soic-pin {
+      .pin {
         flex-direction: column;
       }
     }
-    .soic-pin-leg {
+    .pin-leg {
       height: $pin-width;
       width: $pin-length;
       border: 1px solid black;
     }
+    .pin-pad,
+    .pin-signal {
+      .pin-label {
+        min-width: 60px;
+      }
+    }
+  }
+  .pin-label {
+    border: 1px solid black;
+    font-size: 14px;
+    //font-weight: bold;
   }
 }
