@@ -1,9 +1,14 @@
-module Decoders.ChipDefinitionDecoder exposing (..)
+module Data.Chip exposing (..)
 
 import Array exposing (Array)
+import Data.ChipTypes exposing (DeviceModuleCategory(..), Module(..), Pad, PinoutType, pinoutTypeDecoder)
+import Data.Util.DeviceModuleCategory as DeviceModuleCategory
+import Data.Util.Module as Module
+import Data.Util.Pad as Pad
 import Json.Decode as Decode exposing (Decoder, Error(..), andThen, array, float, int, list, nullable, string)
-import Json.Decode.Pipeline exposing (required)
-import String exposing (startsWith)
+import Json.Decode.Pipeline exposing (required, resolve)
+import List exposing (map)
+import String exposing (dropRight, right, toInt)
 
 
 type alias ChipDefinition =
@@ -47,17 +52,7 @@ chipVariantDecoder =
       |> required "vcc_max" float
       |> required "vcc_min" float
 
--- Pinout decoding
 
-type PinoutType
-    = SOIC
-
-pinoutTypeDecoder : String -> Decoder PinoutType
-pinoutTypeDecoder name =
-    if startsWith "SOIC" name then
-        Decode.succeed SOIC
-    else
-        Decode.fail <| "Unsupported PinoutType: " ++ name
 
 
 type alias ChipPinout =
@@ -82,7 +77,7 @@ type alias ChipPin =
 chipPinDecoder : Decoder ChipPin
 chipPinDecoder =
     Decode.succeed ChipPin
-      |> required "pad" (string |> andThen padDecoder)
+      |> required "pad" (string |> andThen Pad.decode)
       |> required "position" int
 
 
@@ -99,118 +94,106 @@ chipDeviceDecoder =
       |> required "name" string
       |> required "modules" (list chipDeviceModuleDecoder)
 
-type DeviceModuleCategory =
-    PORT | INTERFACE | ANALOG | TIMER | EVENT | LOGIC | PTC | OTHER
+
+
+
 
 type alias ChipDeviceModule =
-    { name : String
+    { name : Module
     , group : DeviceModuleCategory
     , instances : List Instance
     }
-moduleCategoryDecoder : String -> Decoder DeviceModuleCategory
+
+moduleCategoryDecoder : Module -> Decoder DeviceModuleCategory
 moduleCategoryDecoder name =
     case name of
-        "PORT" -> Decode.succeed PORT
-        "TWI" -> Decode.succeed INTERFACE
-        "SPI" -> Decode.succeed INTERFACE
-        "USART" -> Decode.succeed INTERFACE
-        "ADC" -> Decode.succeed ANALOG
-        "AC" -> Decode.succeed ANALOG
-        "DAC" -> Decode.succeed ANALOG
-        "TCA" -> Decode.succeed TIMER
-        "TCB" -> Decode.succeed TIMER
-        "TCD" -> Decode.succeed TIMER
-        "EVSYS" -> Decode.succeed EVENT
-        "CCL" -> Decode.succeed LOGIC
-        "PTC" -> Decode.succeed PTC
+        PORT -> Decode.succeed IO
+        TWI -> Decode.succeed INTERFACE
+        SPI -> Decode.succeed INTERFACE
+        USART -> Decode.succeed INTERFACE
+        ADC -> Decode.succeed ANALOG
+        AC -> Decode.succeed ANALOG
+        DAC -> Decode.succeed ANALOG
+        TCA -> Decode.succeed TIMER
+        TCB -> Decode.succeed TIMER
+        TCD -> Decode.succeed TIMER
+        EVSYS -> Decode.succeed EVENT
+        CCL -> Decode.succeed LOGIC
+        PTC -> Decode.succeed TOUCH
+        CLKCTRL -> Decode.succeed CLOCKCONTROL
+        CPU -> Decode.succeed DEBUG
         _ -> Decode.succeed OTHER
 
 chipDeviceModuleDecoder : Decoder ChipDeviceModule
 chipDeviceModuleDecoder =
-    Decode.succeed ChipDeviceModule
-      |> required "name" string
-      |> required "name"  (string |> andThen moduleCategoryDecoder)
-      |> required "instances" (list instanceDecoder)
+    let
+        mapSignal : Module -> DataSignal -> Signal
+        mapSignal module_ dataSignal =
+            Signal dataSignal.function module_ dataSignal.group dataSignal.index dataSignal.pad
 
+        mapInstance : Module -> DataInstance -> Instance
+        mapInstance module_ dataInstance =
+            Instance dataInstance.name <| Maybe.map (map (mapSignal module_)) dataInstance.signals
+
+        toChipDeviceModule : Module -> DeviceModuleCategory -> List DataInstance -> Decoder ChipDeviceModule
+        toChipDeviceModule module_ moduleCategory instances =
+            Decode.succeed <| ChipDeviceModule module_ moduleCategory (map (mapInstance module_) instances)
+    in
+        Decode.succeed toChipDeviceModule
+          |> required "name" (string |> andThen Module.decode)
+          |> required "name"  (string |> andThen Module.decode |> andThen moduleCategoryDecoder)
+          |> required "instances" (list instanceDecoder)
+          |> resolve
+
+
+type alias DataInstance =
+    { name: String
+    , signals: Maybe (List DataSignal)
+    }
 
 type alias Instance =
     { name: String
     , signals: Maybe (List Signal)
     }
 
-instanceDecoder : Decoder Instance
+instanceDecoder : Decoder DataInstance
 instanceDecoder =
-    Decode.succeed Instance
+    Decode.succeed DataInstance
       |> required "name" string
       |> required "signals" (nullable (list signalDecoder))
 
-type Pad
-    = VDD | GND
-    | PA0 | PA1 | PA2 | PA3 | PA4 | PA5 | PA6 | PA7
-    | PB0 | PB1 | PB2 | PB3 | PB4 | PB5 | PB6 | PB7
-
-padDecoder : String -> Decoder Pad
-padDecoder pad =
-    case pad of
-    "VDD" -> Decode.succeed VDD
-    "GND" -> Decode.succeed GND
-    "PA0" -> Decode.succeed PA0
-    "PA1" -> Decode.succeed PA1
-    "PA2" -> Decode.succeed PA2
-    "PA3" -> Decode.succeed PA3
-    "PA4" -> Decode.succeed PA4
-    "PA5" -> Decode.succeed PA5
-    "PA6" -> Decode.succeed PA6
-    "PA7" -> Decode.succeed PA7
-    "PB0" -> Decode.succeed PB0
-    "PB1" -> Decode.succeed PB1
-    "PB2" -> Decode.succeed PB2
-    "PB3" -> Decode.succeed PB3
-    "PB4" -> Decode.succeed PB4
-    "PB5" -> Decode.succeed PB5
-    "PB6" -> Decode.succeed PB6
-    "PB7" -> Decode.succeed PB7
-    _ ->
-        Decode.fail <| "Unsupported pad: " ++ pad
-
-padToString : Pad -> String
-padToString pad =
-    case pad of
-        VDD -> "VDD"
-        GND -> "GND"
-        PA0 -> "PA0"
-        PA1 -> "PA1"
-        PA2 -> "PA2"
-        PA3 -> "PA3"
-        PA4 -> "PA4"
-        PA5 -> "PA5"
-        PA6 -> "PA6"
-        PA7 -> "PA7"
-        PB0 -> "PB0"
-        PB1 -> "PB1"
-        PB2 -> "PB2"
-        PB3 -> "PB3"
-        PB4 -> "PB4"
-        PB5 -> "PB5"
-        PB6 -> "PB6"
-        PB7 -> "PB7"
 
 
-
-type alias Signal =
+type alias DataSignal =
     { function : String
     , group : String
     , index : Maybe Int
     , pad : Pad
     }
 
-signalDecoder : Decoder Signal
+type alias Signal =
+    { function : String
+    , deviceModule: Module
+    , group : String
+    , index : Maybe Int
+    , pad : Pad
+    }
+
+removeTrailingNumber : String -> String
+removeTrailingNumber s =
+    case toInt <| right 1 s of
+        Just _ -> dropRight 1 s
+        Nothing -> s
+
+
+
+signalDecoder : Decoder DataSignal
 signalDecoder =
-    Decode.succeed Signal
+    Decode.succeed DataSignal
       |> required "function" string
       |> required "group" string
       |> required "index" (nullable int)
-      |> required "pad" (string |> andThen padDecoder)
+      |> required "pad" (string |> andThen Pad.decode)
 
 
 -- Module decoding

@@ -1,5 +1,23 @@
-$pin-width: 20px;
-$pin-length: 40px;
+$pin-width: 22px;
+$pin-length: 25px;
+
+@font-face {
+    font-family: 'Silkscreen';
+    src: url('font/Silkscreen.woff2') format('woff2'),
+        url('font/Silkscreen.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Silkscreen';
+    src: url('font/Silkscreen-Bold.woff2') format('woff2'),
+        url('font/Silkscreen-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
 
 #chip-view {
   &.soic {
@@ -12,10 +30,24 @@ $pin-length: 40px;
       display: flex;
       flex-direction: column;
     }
+    .soic-right {
+      .pin {
+        .pin-leg {
+          border-bottom-right-radius: 5px;
+          border-top-right-radius: 5px;
+        }
+        .pin-pad,
+        .pin-signal {
+          margin-left: 5px;
+        }
+      }
+    }
     .soic-middle {
       width: 75px;
       border: 1px solid black;
+      background-color: #323232;
       .pin1-marker {
+        background-color: #e3e0e0;
         height: 10px;
         width: 10px;
         border: 1px solid black;
@@ -23,10 +55,25 @@ $pin-length: 40px;
         margin-left: 10px;
         margin-top: 10px;
       }
+      .module-name {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+        transform: rotate(90deg);
+        color: white;
+      }
     }
     .soic-left {
       .pin {
         flex-direction: row-reverse;
+        .pin-leg {
+          border-bottom-left-radius: 5px;
+          border-top-left-radius: 5px;
+        }
+        .pin-pad,
+        .pin-signal {
+          margin-right: 5px;
+        }
       }
     }
     .pin {
@@ -45,31 +92,69 @@ $pin-length: 40px;
         margin-bottom: 10px;
       }
     }
-    .soic-top {
-      .pin {
-        flex-direction: column-reverse;
-      }
-    }
-    .soic-bottom {
-      .pin {
-        flex-direction: column;
-      }
-    }
     .pin-leg {
       height: $pin-width;
       width: $pin-length;
       border: 1px solid black;
+      background-color: #ddddea;
+      .pin-label {
+        width: 12px;
+        height: 12px;
+        border-radius: 6px;
+        border: none;
+      }
     }
     .pin-pad,
     .pin-signal {
       .pin-label {
-        min-width: 60px;
+        font-family: monospace;
+        width: 40px;
+        max-height: 22px;
+        border-radius: 5px;
       }
     }
   }
   .pin-label {
     border: 1px solid black;
-    font-size: 14px;
+    font-size: 10px;
     //font-weight: bold;
   }
+  $light-font: white;
+  .pin-pad .pin-label { background-color: #b5e853; }
+  .pin-signal {
+    &.AIN0 .pin-label { background-color: aquamarine; }
+    &.AC0 .pin-label { color: $light-font; background-color: #37a180; }
+    &.DAC0 .pin-label { color: $light-font; background-color: #024a33; }
+    &.SPI0 .pin-label { color: $light-font; background-color: #e23333; }
+    &.TWI0 .pin-label { background-color: yellow; }
+    &.TWI0_ALT .pin-label { background: repeating-linear-gradient(45deg,yellow,yellow 10px, #b7b700 0,#b7b700 20px) };
+    &.OTHER .pin-label,
+    &.BREAK .pin-label { color: $light-font; background-color: #790004 };
+    &.USART0 .pin-label { color: $light-font; background-color: #ff6425 };
+    &.USART0_ALT .pin-label { color: $light-font; background: repeating-linear-gradient(45deg,#ff6425, #b7471b 10px, #ff6425 0,#ff6425 20px) };
+    &.TCA0 .pin-label { color: $light-font; background-color: #007bb2 };
+    &.TCA0_ALT .pin-label { color: $light-font; background: repeating-linear-gradient(45deg,#007bb2, #007bb2 10px, #005479 0,#005479 20px) };
+    &.TCB0 .pin-label { color: $light-font; background-color: #495ea9 };
+    &.TCD0 .pin-label { color: $light-font; background-color: #2d3063 };
+    &.PTC_X .pin-label { color: $light-font; background-color: #717b71 };
+    &.PTC_Y .pin-label { color: $light-font; background-color: #535f53 };
+    &.PTC_DS .pin-label { color: $light-font; background-color: #394239 };
+
+    &.EVAINCH0 .pin-label { color: $light-font; background-color: #a671aa };
+    &.EVSINCH0 .pin-label { color: $light-font; background-color: #8f4395 };
+    &.EVSINCH1 .pin-label { color: $light-font; background-color: #e971f1 };
+    &.EVAINCH1 .pin-label { color: $light-font; background-color: #a225aa };
+    &.EVSYS .pin-label { color: $light-font; background-color: #e91ef8 };
+
+    &.CLKCTRL .pin-label { background-color: #00f052
+    };
+
+    &.CCL .pin-label {color: $light-font; background-color: #6e4343
+    };
+    &.BREAK .pin-label {color: $light-font; background-color: #6e4343
+    };
+
+
+  }
 }
+
