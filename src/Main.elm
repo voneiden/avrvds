@@ -254,7 +254,6 @@ getSignalsFromDevice state device =
         |> map .signals
         |> filterMap identity
         |> concat
-        |> filter (\s -> s.group /= "PIN")
 
 
 padSignals : Pad -> List Signal -> List Signal
@@ -344,22 +343,20 @@ fitSignalGroups signalGroups initPads pads =
                 Just ( remainingPads, fittedSignals ) ->
                     fittedSignals ++ fitSignalGroups (filter ((/=) fittedSignals) signalGroups) initPads remainingPads
 
+isPort : Pad -> Bool
+isPort pad =
+    case pad of
+        VDD ->
+            False
+
+        GND ->
+            False
+
+        _ ->
+            True
 
 filterPortPads : List Pad -> List Pad
 filterPortPads pads =
-    let
-        isPort : Pad -> Bool
-        isPort pad =
-            case pad of
-                VDD ->
-                    False
-
-                GND ->
-                    False
-
-                _ ->
-                    True
-    in
     filter isPort pads
 
 
@@ -405,7 +402,11 @@ signalToString signal =
                 Just index ->
                     prefix ++ fromInt index
     in
-    replace "_" "-" result
+    case signal.function of
+        "IOPORT" ->
+            Pad.toString signal.pad
+        _ ->
+            replace "_" "-" result
 
 
 highlightSignal : State -> Signal -> Bool
@@ -428,9 +429,12 @@ selectSignalClass state signal =
     case state.selectedSignal of
         Just selectedSignal ->
             if signal.deviceModule == selectedSignal.deviceModule then
-                Just "selected"
+                if signal.function == selectedSignal.function then
+                    Just "selected"
+                else
+                    Just "selected-related"
             else
-                Just "shadow"
+                Just "selected-unrelated"
         Nothing -> Nothing
 
 
@@ -457,12 +461,18 @@ viewPinSignal state signal =
 
 viewPin : State -> List Signal -> ChipPin -> Html Msg
 viewPin state signals pin =
-    div [ class "pin" ] <|
-        append
-            [ div [ class "pin-leg" ] [ div [ class "pin-label" ] [ text <| fromInt pin.position ] ]
-            , div [ class "pin-pad" ] [ div [ class "pin-label" ] [ text <| Pad.toString pin.pad ] ]
-            ]
-        <|
+    let
+        nonport =
+            case isPort pin.pad of
+                False -> [div [ class (cls [Just "pin-signal", Just (Pad.toString pin.pad)]) ] [ div [ class "pin-label" ] [ text <| Pad.toString pin.pad ]]]
+                True -> []
+    in
+        div [ class "pin" ] <|
+
+            [ div [ class "pin-leg" ] [ div [ class "pin-label" ] [ text <| fromInt pin.position ] ] ]
+            ++
+            nonport
+            ++
             map (viewPinSignal state) (padSignals pin.pad signals)
 
 

@@ -1,8 +1,10 @@
 $pin-width: 22px;
 $pin-length: 25px;
+$label-border-radius: 6px;
 
 #chip-view {
   .pin-label-wrapper {
+    border-radius: $label-border-radius;
     border: 1px solid transparent;
   }
   &.dark {
@@ -102,7 +104,7 @@ $pin-length: 25px;
         font-family: monospace;
         width: 40px;
         max-height: 22px;
-        border-radius: 5px;
+        border-radius: $label-border-radius;
       }
     }
   }
@@ -112,8 +114,11 @@ $pin-length: 25px;
     //font-weight: bold;
   }
   $light-font: white;
-  .pin-pad .pin-label { background-color: #b5e853; }
+  //.pin-pad .pin-label { background-color: #b5e853; }
   .pin-signal {
+    &.VDD .pin-label { color: $light-font; background-color: darkred; }
+    &.GND .pin-label { color: $light-font; background-color: black; }
+    &.IOPORT .pin-label { background-color: #b5e853; }
     &.AIN0 .pin-label { background-color: aquamarine; }
     &.AC0 .pin-label { color: $light-font; background-color: #37a180; }
     &.DAC0 .pin-label { color: $light-font; background-color: #024a33; }
@@ -153,10 +158,23 @@ $pin-length: 25px;
         }
       }
     }
-    &.select {
-
+    &.selected {
+      .pin-label-wrapper {
+        border: 0;
+        .pin-label {
+          border: 2px solid cyan;
+        }
+      }
     }
-    &.shadow {
+    &.selected-related {
+      .pin-label-wrapper {
+        border: 2px dashed cyan;
+        .pin-label {
+          border: 0;
+        }
+      }
+    }
+    &.selected-unrelated {
       opacity: 0.5;
     }
 
