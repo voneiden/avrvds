@@ -1,25 +1,17 @@
 $pin-width: 22px;
 $pin-length: 25px;
 
-@font-face {
-    font-family: 'Silkscreen';
-    src: url('font/Silkscreen.woff2') format('woff2'),
-        url('font/Silkscreen.woff') format('woff');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Silkscreen';
-    src: url('font/Silkscreen-Bold.woff2') format('woff2'),
-        url('font/Silkscreen-Bold.woff') format('woff');
-    font-weight: bold;
-    font-style: normal;
-    font-display: swap;
-}
-
 #chip-view {
+  .pin-label-wrapper {
+    border: 1px solid transparent;
+  }
+  &.dark {
+    background-color: black; // DARK
+    .pin-label {
+      border: 1px solid white;
+    }
+  }
+
   &.soic {
     display: inline-flex;
     flex-direction: row;
@@ -153,6 +145,20 @@ $pin-length: 25px;
     };
     &.BREAK .pin-label {color: $light-font; background-color: #6e4343
     };
+    &.highlight {
+      .pin-label-wrapper {
+        border: 0 solid transparent;
+        .pin-label  {
+          border: 2px solid cyan;
+        }
+      }
+    }
+    &.select {
+
+    }
+    &.shadow {
+      opacity: 0.5;
+    }
 
 
   }

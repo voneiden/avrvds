@@ -14,8 +14,9 @@ import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, type_)
-import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
+import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
 import Http
+import Json.Decode as Decoder
 import List exposing (append, concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
 import Maybe exposing (map2, withDefault)
 import String exposing (endsWith, fromInt, join, replace)
@@ -56,6 +57,7 @@ type alias State =
     , pin : Int
     , visibleModules : List DeviceModuleCategory
     , highlightModule : Maybe Module
+    , selectedSignal : Maybe Signal
     , hilightRelatedCategories : List DeviceModuleCategory
     }
 
@@ -114,6 +116,7 @@ type Msg
     | ReceiveDefinition (Result Http.Error ChipDefinition)
     | ToggleVisibleCategory DeviceModuleCategory
     | HighlightModule Module
+    | SelectSignal (Maybe Signal)
     | ClearHighlight
 
 
@@ -171,7 +174,7 @@ update msg model =
                                         case maybeDevice of
                                             Nothing -> (InvalidState session, Cmd.none)
                                             Just device ->
-                                                ( Success session (State chipDefinition variant device pinout 0 0 [ IO, ANALOG, INTERFACE, TIMER, OTHER ] Nothing []), Cmd.none )
+                                                ( Success session (State chipDefinition variant device pinout 0 0 [ IO, ANALOG, INTERFACE, TIMER, OTHER ] Nothing Nothing []), Cmd.none )
 
                 Err error ->
                     ( Failed session error, Cmd.none )
@@ -200,7 +203,12 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-
+        SelectSignal pin ->
+            case model of
+                Success _ state ->
+                    ( Success session { state | selectedSignal = pin } , Cmd.none)
+                _ ->
+                    ( model, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -409,16 +417,40 @@ highlightSignal state signal =
         Nothing ->
             False
 
+highlightSignalClass : Bool -> Maybe String
+highlightSignalClass highlight =
+    case highlight of
+        True -> Just "highlight"
+        False -> Nothing
+
+selectSignalClass : State -> Signal -> Maybe String
+selectSignalClass state signal =
+    case state.selectedSignal of
+        Just selectedSignal ->
+            if signal.deviceModule == selectedSignal.deviceModule then
+                Just "selected"
+            else
+                Just "shadow"
+        Nothing -> Nothing
+
 
 viewPinSignal : State -> Signal -> Html Msg
 viewPinSignal state signal =
     div
-        [ class <| cls [ ( True, "pin-signal" ), ( True, signal.function ), ( highlightSignal state signal, "highlight" ) ]
+        [ class <| cls
+            [ Just "pin-signal"
+            , Just signal.function
+            , highlightSignalClass <| highlightSignal state signal
+            , selectSignalClass state signal
+            ]
         , onMouseEnter <| HighlightModule signal.deviceModule
         , onMouseLeave ClearHighlight
+        --, onClick <| SelectSignal (Just signal)
+        , stopPropagationOn "click" (Decoder.succeed (SelectSignal (Just signal), True))
         ]
-        [ div [ class "pin-label" ]
-            [ text <| signalToString signal
+        [
+            div [ class "pin-label-wrapper"] [
+                div [ class "pin-label" ] [ text <| signalToString signal]
             ]
         ]
 
@@ -434,12 +466,16 @@ viewPin state signals pin =
             map (viewPinSignal state) (padSignals pin.pad signals)
 
 
-cls : List ( Bool, String ) -> String
-cls pairs =
+cls2 : List ( Bool, String ) -> String
+cls2 pairs =
     filter first pairs
         |> map second
         |> join " "
 
+cls : List (Maybe String) -> String
+cls xs =
+    filterMap identity xs
+        |> join " "
 
 viewModuleSelectCheckbox : State -> DeviceModuleCategory -> Html Msg
 viewModuleSelectCheckbox state category =
@@ -482,9 +518,9 @@ viewChip state signals =
     in
     case state.pinout.pinoutType of
         SOIC ->
-            div [ id "chip-container" ]
+            div [ id "chip-container", onClick (SelectSignal Nothing)]
                 [ viewModuleSelect state
-                , div [ id "chip-view", class "soic" ]
+                , div [ id "chip-view", class "soic dark" ]
                     [ div [ class "soic-left" ] <| map (viewPin state leftSignals) (soicLeftPins state.pinout.pins)
                     , div [ class "soic-middle" ]
                         [ div [ class "pin1-marker" ] []
