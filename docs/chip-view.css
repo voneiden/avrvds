@@ -1,0 +1,223 @@
+#chip-view .pin-label-wrapper {
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+#chip-view.dark {
+  background-color: black;
+}
+#chip-view.dark .pin-label {
+  border: 1px solid white;
+}
+#chip-view.soic {
+  display: inline-flex;
+  flex-direction: row;
+}
+#chip-view.soic .soic-left,
+#chip-view.soic .soic-middle,
+#chip-view.soic .soic-right {
+  display: flex;
+  flex-direction: column;
+}
+#chip-view.soic .soic-right .pin .pin-leg {
+  border-bottom-right-radius: 5px;
+  border-top-right-radius: 5px;
+}
+#chip-view.soic .soic-right .pin .pin-pad,
+#chip-view.soic .soic-right .pin .pin-signal {
+  margin-left: 5px;
+}
+#chip-view.soic .soic-middle {
+  width: 75px;
+  border: 1px solid black;
+  background-color: #323232;
+}
+#chip-view.soic .soic-middle .pin1-marker {
+  background-color: #e3e0e0;
+  height: 10px;
+  width: 10px;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin-left: 10px;
+  margin-top: 10px;
+}
+#chip-view.soic .soic-middle .module-name {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  transform: rotate(90deg);
+  color: white;
+}
+#chip-view.soic .soic-left .pin {
+  flex-direction: row-reverse;
+}
+#chip-view.soic .soic-left .pin .pin-leg {
+  border-bottom-left-radius: 5px;
+  border-top-left-radius: 5px;
+}
+#chip-view.soic .soic-left .pin .pin-pad,
+#chip-view.soic .soic-left .pin .pin-signal {
+  margin-right: 5px;
+}
+#chip-view.soic .pin {
+  display: flex;
+  justify-content: flex-start;
+  flex-basis: 22px;
+  flex-grow: 0;
+}
+#chip-view.soic .pin div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#chip-view.soic .pin:not(:last-child) {
+  margin-bottom: 10px;
+}
+#chip-view.soic .pin-leg {
+  height: 22px;
+  width: 25px;
+  border: 1px solid black;
+  background-color: #ddddea;
+}
+#chip-view.soic .pin-leg .pin-label {
+  width: 12px;
+  height: 12px;
+  border-radius: 6px;
+  border: none;
+}
+#chip-view.soic .pin-pad .pin-label,
+#chip-view.soic .pin-signal .pin-label {
+  font-family: monospace;
+  width: 40px;
+  max-height: 22px;
+  border-radius: 6px;
+}
+#chip-view .pin-label {
+  border: 1px solid black;
+  font-size: 10px;
+}
+#chip-view .pin-signal.VDD .pin-label {
+  color: white;
+  background-color: darkred;
+}
+#chip-view .pin-signal.GND .pin-label {
+  color: white;
+  background-color: black;
+}
+#chip-view .pin-signal.IOPORT .pin-label {
+  background-color: #b5e853;
+}
+#chip-view .pin-signal.AIN0 .pin-label {
+  background-color: aquamarine;
+}
+#chip-view .pin-signal.AC0 .pin-label {
+  color: white;
+  background-color: #37a180;
+}
+#chip-view .pin-signal.DAC0 .pin-label {
+  color: white;
+  background-color: #024a33;
+}
+#chip-view .pin-signal.SPI0 .pin-label {
+  color: white;
+  background-color: #e23333;
+}
+#chip-view .pin-signal.TWI0 .pin-label {
+  background-color: yellow;
+}
+#chip-view .pin-signal.TWI0_ALT .pin-label {
+  background: repeating-linear-gradient(45deg, yellow, yellow 10px, #b7b700 0, #b7b700 20px);
+}
+#chip-view .pin-signal.OTHER .pin-label, #chip-view .pin-signal.BREAK .pin-label {
+  color: white;
+  background-color: #790004;
+}
+#chip-view .pin-signal.USART0 .pin-label {
+  color: white;
+  background-color: #ff6425;
+}
+#chip-view .pin-signal.USART0_ALT .pin-label {
+  color: white;
+  background: repeating-linear-gradient(45deg, #ff6425, #b7471b 10px, #ff6425 0, #ff6425 20px);
+}
+#chip-view .pin-signal.TCA0 .pin-label {
+  color: white;
+  background-color: #007bb2;
+}
+#chip-view .pin-signal.TCA0_ALT .pin-label {
+  color: white;
+  background: repeating-linear-gradient(45deg, #007bb2, #007bb2 10px, #005479 0, #005479 20px);
+}
+#chip-view .pin-signal.TCB0 .pin-label {
+  color: white;
+  background-color: #495ea9;
+}
+#chip-view .pin-signal.TCD0 .pin-label {
+  color: white;
+  background-color: #2d3063;
+}
+#chip-view .pin-signal.PTC_X .pin-label {
+  color: white;
+  background-color: #717b71;
+}
+#chip-view .pin-signal.PTC_Y .pin-label {
+  color: white;
+  background-color: #535f53;
+}
+#chip-view .pin-signal.PTC_DS .pin-label {
+  color: white;
+  background-color: #394239;
+}
+#chip-view .pin-signal.EVAINCH0 .pin-label {
+  color: white;
+  background-color: #a671aa;
+}
+#chip-view .pin-signal.EVSINCH0 .pin-label {
+  color: white;
+  background-color: #8f4395;
+}
+#chip-view .pin-signal.EVSINCH1 .pin-label {
+  color: white;
+  background-color: #e971f1;
+}
+#chip-view .pin-signal.EVAINCH1 .pin-label {
+  color: white;
+  background-color: #a225aa;
+}
+#chip-view .pin-signal.EVSYS .pin-label {
+  color: white;
+  background-color: #e91ef8;
+}
+#chip-view .pin-signal.CLKCTRL .pin-label {
+  background-color: #00f052;
+}
+#chip-view .pin-signal.CCL .pin-label {
+  color: white;
+  background-color: #6e4343;
+}
+#chip-view .pin-signal.BREAK .pin-label {
+  color: white;
+  background-color: #6e4343;
+}
+#chip-view .pin-signal.highlight .pin-label-wrapper {
+  border: 0 solid transparent;
+}
+#chip-view .pin-signal.highlight .pin-label-wrapper .pin-label {
+  border: 2px solid cyan;
+}
+#chip-view .pin-signal.selected .pin-label-wrapper {
+  border: 0;
+}
+#chip-view .pin-signal.selected .pin-label-wrapper .pin-label {
+  border: 2px solid cyan;
+}
+#chip-view .pin-signal.selected-related .pin-label-wrapper {
+  border: 2px dashed cyan;
+}
+#chip-view .pin-signal.selected-related .pin-label-wrapper .pin-label {
+  border: 0;
+}
+#chip-view .pin-signal.selected-unrelated {
+  opacity: 0.5;
+}
+
+/*# sourceMappingURL=chip-view.css.map */
