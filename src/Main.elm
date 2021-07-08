@@ -9,7 +9,7 @@ import Data.Chip exposing (ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
 import Data.Util.DeviceModuleCategory as DeviceModuleCategory
 import Data.Util.Pad as Pad
-import Debug exposing (toString)
+--import Debug exposing (toString)
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, input, label, text)
@@ -41,6 +41,7 @@ main =
 
 type alias Session =
     { key : Nav.Key
+    , root: String
     }
 
 
@@ -93,10 +94,14 @@ modelSession model =
             session
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+type alias Flags =
+    { root: String
+    }
+
+init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     --(Loading, getDefinition)
-    ( Loading <| Session key, getDefinition "ATtiny814" )
+    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny814" )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -155,7 +160,7 @@ update msg model =
                     ( model, Cmd.none )
 
         RequestDefinition definitionId ->
-            ( Loading session, getDefinition definitionId )
+            ( Loading session, getDefinition session.root definitionId )
 
         ReceiveDefinition result ->
             case result of
@@ -314,10 +319,10 @@ signalGroupsFitPads signalGroups availablePads =
                     signalGroupsFitPads xs availablePads
 
                 Just usedPads ->
-                    let
-                        tmp =
-                            Debug.log ("Fitted" ++ toString x) (length x)
-                    in
+                    --let
+                        --tmp =
+                        --     Debug.log ("Fitted" ++ toString x) (length x)
+                    --in
                     Just ( filter (\p -> not (member p usedPads)) availablePads, x )
 
 
@@ -331,10 +336,10 @@ fitSignalGroups signalGroups initPads pads =
             case signalGroupsFitPads signalGroups_ pads of
                 Nothing ->
                     if initPads == pads then
-                        let
-                            tmp =
-                                Debug.log ("FORCE FITTING REMAINING" ++ toString signalGroups_) (length signalGroups_)
-                        in
+                        --let
+                        --    tmp =
+                        --        Debug.log ("FORCE FITTING REMAINING" ++ toString signalGroups_) (length signalGroups_)
+                        --in
                         concat signalGroups_
 
                     else
@@ -567,7 +572,7 @@ viewGif model =
         Failed _ error ->
             div []
                 [ text "I could not load a random cat for some reason:"
-                , text (toString error)
+                --, text (toString error)
                 , button [ onClick <| RequestDefinition "ATtiny814" ] [ text "Try Again!" ]
                 ]
 
@@ -586,9 +591,9 @@ viewGif model =
             div [] [text "Woopsie doopsie, invalid state"]
 
 
-getDefinition : String -> Cmd Msg
-getDefinition definitionId =
+getDefinition : String -> String -> Cmd Msg
+getDefinition root definitionId =
     Http.get
-        { url = "/data/" ++ definitionId ++ ".json"
+        { url = root ++ "data/" ++ definitionId ++ ".json"
         , expect = Http.expectJson ReceiveDefinition chipDefinitionDecoder
         }
