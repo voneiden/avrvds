@@ -50,10 +50,11 @@ $label-border-radius: 6px;
         margin-top: 10px;
       }
       .module-name {
+        writing-mode: vertical-rl;
         flex-grow: 1;
         display: flex;
         align-items: center;
-        transform: rotate(90deg);
+        justify-content: center;
         color: white;
       }
     }
