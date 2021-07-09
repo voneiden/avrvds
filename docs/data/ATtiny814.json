@@ -7412,7 +7412,7 @@
                   "name": "DATA",
                   "rw": "R",
                   "values_ref": null,
-                  "description": "ATtiny417/814/816/817\nName: RXDATAH\nOffset: 0x01\nReset: 0x00\nProperty: -\nThis register contains the MSb of the data received by the USART receiver, as well as status bits reflecting the status\nof the received data frame. The USART receiver is double-buffered, and this register always represents the data and\nstatus bits for the oldest received frame. If the data and status bits for only one frame is present in the receive buffer,\nthis register contains that data.\nThe buffer shifts out the data either when RXDATAL or RXDATAH is read, depending on the configuration. The\nregister, which does not lead to data being shifted, must be read first to be able to read both bytes before shifting.\nWhen the Character Size (CHSIZE) bits in the Control C (USARTn.CTRLC) register is configured to 9-bit (low byte\nfirst), a read of RXDATAH shifts the receive buffer, or else, RXDATAL shifts the buffer.\nBit 7 6 5 4 3 2 1 0 \n RXCIF BUFOVF    FERR PERR DATA[8] \nAccess R R R R R \nReset 0 0 0 0 0 "
+                  "description": ""
                 }
               ]
             },
@@ -7514,7 +7514,7 @@
                   "name": "DATA8",
                   "rw": "RW",
                   "values_ref": null,
-                  "description": "ATtiny417/814/816/817\nName: STATUS\nOffset: 0x04\nReset: 0x00\nProperty: -\nBit 7 6 5 4 3 2 1 0 \n RXCIF TXCIF DREIF RXSIF ISFIF  BDF WFB \nAccess R R/W R R/W R/W R/W W \nReset 0 0 1 0 0 0 0 "
+                  "description": ""
                 }
               ]
             },
@@ -7532,7 +7532,7 @@
                   "name": "DATA",
                   "rw": "RW",
                   "values_ref": null,
-                  "description": "ATtiny417/814/816/817\nName: TXDATAH\nOffset: 0x03\nReset: 0x00\nProperty: -\nThe data written to this register is automatically loaded into the TX Buffer and through to the dedicated Shift register.\nThe shift register outputs each of the bits serially to the TXD pin.\nWhen using a 9-bit frame size, the ninth bit (MSb) must be written to the Transmit Data Register High Byte\n(USARTn.TXDATAH). In that case, the buffer shifts data either when the Transmit Data Register Low Byte\n(USARTn.TXDATAL) or the Transmit Data Register High Byte (USARTn.TXDATAH) is written, depending on the\nconfiguration. The register, which does not lead to data being shifted, must be written first to be able to write both\nregisters before shifting.\nWhen the Character Size (CHSIZE) bit field in the Control C (USARTn.CTRLC) register is configured to 9-bit (low\nbyte first), a write of the Transmit Data Register High Byte shifts the transmit buffer. Otherwise, the Transmit Data\nRegister Low Byte shifts the buffer.\nThis register may only be written when the Data Register Empty Interrupt Flag (DREIF) in the Status\n(USARTn.STATUS) register is set.\nBit 7 6 5 4 3 2 1 0 \n        DATA[8] \nAccess R/W \nReset 0 "
+                  "description": ""
                 }
               ]
             },
