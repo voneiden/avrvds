@@ -124,6 +124,7 @@ $label-border-radius: 6px;
     &.AC0 .pin-label { color: $light-font; background-color: #37a180; }
     &.DAC0 .pin-label { color: $light-font; background-color: #024a33; }
     &.SPI0 .pin-label { color: $light-font; background-color: #e23333; }
+    &.SPI0_ALT .pin-label { color: $light-font; background: repeating-linear-gradient(45deg,#e23333,#e23333 10px, #af2626 0,#af2626 20px) };
     &.TWI0 .pin-label { background-color: yellow; }
     &.TWI0_ALT .pin-label { background: repeating-linear-gradient(45deg,yellow,yellow 10px, #b7b700 0,#b7b700 20px) };
     &.OTHER .pin-label,

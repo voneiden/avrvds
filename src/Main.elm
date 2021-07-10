@@ -5,17 +5,18 @@ module Main exposing (..)
 import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
-import Data.Chip exposing (ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Signal, chipDefinitionDecoder)
+import Data.Chip exposing (ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
 import Data.Util.DeviceModuleCategory as DeviceModuleCategory
+import Data.Util.Module as Module
 import Data.Util.Pad as Pad
 --import Debug exposing (toString)
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
-import Html exposing (Html, a, button, div, input, label, text)
+import Html exposing (Html, a, button, div, h2, h3, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
-import Http
+import Http exposing (Error(..))
 import Json.Decode as Decoder
 import List exposing (append, concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
 import Maybe exposing (map2, withDefault)
@@ -101,7 +102,7 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     --(Loading, getDefinition)
-    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny814" )
+    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny202" )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -546,11 +547,63 @@ viewChip state signals =
                 ]
 
 
+viewRegister : Register -> Html Msg
+viewRegister register =
+    div [] <|
+        [ h3 [] [text register.name]
+        , text <| Maybe.withDefault "" register.description
+        ] ++
+        case register.bitfields of
+            Nothing ->
+                [text "No bitfields"]
+            Just bitfields ->
+                [text "Bitfields!"]
+
+
+
+viewRegisterGroup : Bool -> RegisterGroup -> Html Msg
+viewRegisterGroup caption registerGroup =
+    let
+        registers = map viewRegister registerGroup.registers
+    in
+    case caption of
+        True ->
+            div [] <| [ div [] [ text registerGroup.caption]] ++ registers
+        False ->
+            div [] <| registers
 
 -- note on signal logic
 -- group by "function"
 -- name by "group" + index (if contains more than 1!)
+viewModule : State -> Html Msg
+viewModule state =
+    case state.selectedSignal of
+        Nothing ->
+            text ""
+        Just signal ->
+            let
+                chipModules = filter (\m -> m.name == signal.deviceModule) state.chipDefinition.modules
+            in
+            case chipModules of
+                chipModule::_ ->
+                    div [] <|
+                         [h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
+                         ++
+                         case chipModule.registerGroups of
+                             Just registerGroups ->
+                                 let
+                                     captionGroup =
+                                         case length registerGroups of
+                                             1 -> False
 
+                                             _ -> True
+                                 in
+                                 map (viewRegisterGroup captionGroup) registerGroups
+                             Nothing ->
+                                 [ text "No registers"]
+
+                [] ->
+                    div [] [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
 
 viewGif : Model -> Html Msg
 viewGif model =
@@ -571,9 +624,23 @@ viewGif model =
 
         Failed _ error ->
             div []
-                [ text "I could not load a random cat for some reason:"
-                --, text (toString error)
-                , button [ onClick <| RequestDefinition "ATtiny814" ] [ text "Try Again!" ]
+                [ text "I could not load a random cat for some reason:",
+                case error of
+                    BadBody message ->
+                        text <| "Decoding error:" ++ message
+
+                    BadUrl message ->
+                        text <| "Bad url" ++ message
+
+                    Timeout ->
+                        text "Request timed out"
+
+                    NetworkError ->
+                        text "Network error"
+
+                    BadStatus statusCode ->
+                        text <| "Bad status response:" ++ fromInt statusCode
+                , button [ onClick <| RequestDefinition "ATtiny202" ] [ text "Try Again!" ]
                 ]
 
         Loading _ ->
@@ -583,7 +650,7 @@ viewGif model =
             div []
                 [ div []
                     [ viewChip state  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
-
+                    , viewModule state
                     -- viewChip pinout (getSignalsFromDevice device))
                     ]
                 ]

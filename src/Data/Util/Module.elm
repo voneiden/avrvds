@@ -38,6 +38,7 @@ list =
     ,VPORT
     ,VREF
     ,WDT
+    ,UPDI
     ]
 
 
@@ -76,6 +77,7 @@ toString moduleValue =
         VPORT -> "VPORT"
         VREF -> "VREF"
         WDT -> "WDT"
+        UPDI -> "UPDI"
 
 
 fromString : String -> Maybe Module
@@ -113,6 +115,7 @@ fromString moduleValue =
         "VPORT" -> Just VPORT
         "VREF" -> Just VREF
         "WDT" -> Just WDT
+        "UPDI" -> Just UPDI
         _ -> Nothing
 
 
@@ -151,5 +154,6 @@ decode moduleValue =
         "VPORT" -> Decode.succeed VPORT
         "VREF" -> Decode.succeed VREF
         "WDT" -> Decode.succeed WDT
+        "UPDI" -> Decode.succeed UPDI
         _ -> Decode.fail <| "Unsupported moduleValue: " ++ moduleValue
 

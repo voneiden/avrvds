@@ -17,7 +17,7 @@ type Module
     CLKCTRL | CPU | CPUINT | CRCSCAN | FUSE | GPIO |
     LOCKBIT | NVMCTRL | PORTMUX | RSTCTRL | RTC |
     SIGROW | SLPCTRL | SYSCFG | USERROW | VPORT |
-    VREF | WDT
+    VREF | WDT | UPDI
 
 -- @enum
 type DeviceModuleCategory =

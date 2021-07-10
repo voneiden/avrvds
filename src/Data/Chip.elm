@@ -15,7 +15,7 @@ type alias ChipDefinition =
     { variants: Array ChipVariant
     , pinouts : Array ChipPinout
     , devices: Array ChipDevice
-    , modules : Array ChipModule
+    , modules : List ChipModule
     }
 
 chipDefinitionDecoder : Decoder ChipDefinition
@@ -24,7 +24,7 @@ chipDefinitionDecoder =
     |> required "variants" (array chipVariantDecoder)
     |> required "pinouts" (array chipPinoutDecoder)
     |> required "devices" (array chipDeviceDecoder)
-    |> required "modules" (array chipModuleDecoder)
+    |> required "modules" (list chipModuleDecoder)
 
 -- Variant decoding
 
@@ -200,7 +200,7 @@ signalDecoder =
 
 type alias ChipModule =
     { id: String
-    , name : String
+    , name : Module
     , caption: String
     , registerGroups : Maybe (List RegisterGroup)
     }
@@ -209,7 +209,7 @@ chipModuleDecoder : Decoder ChipModule
 chipModuleDecoder =
     Decode.succeed ChipModule
         |> required "id" string
-        |> required "name" string
+        |> required "name" (string |> andThen Module.decode)
         |> required "caption" string
         |> required "register_groups" (nullable (list registerGroupDecoder))
 
@@ -231,6 +231,7 @@ registerGroupDecoder =
 
 type alias Register =
     { name : String
+    , description: Maybe String
     , bitfields : Maybe (List Bitfield)
     }
 
@@ -238,6 +239,7 @@ registerDecoder : Decoder Register
 registerDecoder =
     Decode.succeed Register
         |> required "name" string
+        |> required "description" (nullable string)
         |> required "bitfields" (nullable (list bitfieldDecoder))
 
 type alias Bitfield =
