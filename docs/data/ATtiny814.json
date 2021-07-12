@@ -1503,7 +1503,24 @@
               "offset": "0x10",
               "rw": "R",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "RES",
+                  "caption": "Result low byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field constitutes the LSB of ADC/Accumulator Result, (ADCn.RES) register. The data format in ADC and\nDigital Accumulation is 1's complement, where 0x0000 represents the zero, and 0xFFFF represents the largest\nnumber (full scale)."
+                },
+                {
+                  "name": "RES",
+                  "caption": "Result high byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field constitutes the MSB of the ADCn.RES register, where the MSb is RES[15]. The ADC itself has a 10-bit\noutput, ADC[9:0], where the MSb is ADC[9]. The data format in ADC and Digital Accumulation is 1's complement,\nwhere 0x0000 represents the zero, and 0xFFFF represents the largest number (full scale)."
+                }
+              ],
               "description": "The ADCn.RESL and ADCn.RESH register pair represents the 16-bit value, ADCn.RES. The low byte [7:0] (suffix L)\nis accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nIf the analog input is higher than the reference level of the ADC, the 10-bit ADC result will be equal the maximum\nvalue of 0x3FF. Likewise, if the input is below 0V, the ADC result will be 0x000. As the ADC cannot produce a result\nabove 0x3FF values, the accumulated value will never exceed 0xFFC0 even after the maximum allowed 64\naccumulations."
             },
             {
@@ -1551,7 +1568,24 @@
               "offset": "0x14",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "WINHT",
+                  "caption": "Window Comparator High Threshold Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit register."
+                },
+                {
+                  "name": "WINHT",
+                  "caption": "Window Comparator High Threshold High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit register."
+                }
+              ],
               "description": "This register is the 16-bit high threshold for the digital comparator monitoring the ADCn.RES register. The ADC itself\nhas a 10-bit output, RES[9:0], where the MSb is RES[9]. The data format in ADC and Digital Accumulation is 1's\ncomplement, where 0x0000 represents the zero, and 0xFFFF represents the largest number (full scale).\nThe ADCn.WINHTH and ADCn.WINHTL register pair represents the 16-bit value, ADCn.WINHT. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -1561,7 +1595,24 @@
               "offset": "0x12",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "WINLT",
+                  "caption": "Window Comparator Low Threshold Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit register."
+                },
+                {
+                  "name": "WINLT",
+                  "caption": "Window Comparator Low Threshold High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit register."
+                }
+              ],
               "description": "This register is the 16-bit low threshold for the digital comparator monitoring the ADCn.RES register. The ADC itself\nhas a 10-bit output, RES[9:0], where the MSb is RES[9]. The data format in ADC and Digital Accumulation is 1's\ncomplement, where 0x0000 represents the zero, and 0xFFFF represents the largest number (full scale).\nThe ADCn.WINLTH and ADCn.WINLTL register pair represents the 16-bit value, ADCn.WINLT. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nWhen accumulating samples, the window comparator thresholds are applied to the accumulated value and not on\neach sample."
             }
           ]
@@ -1977,7 +2028,16 @@
               "offset": "0x8",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TRUTH0",
+                  "caption": "Truth Table",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits determine the output of LUTn according to the LUTn-TRUTHSEL[2:0] inputs.\nBit Name Value Description\nTRUTHn[0]\n0 The output of LUTn is 0 when the inputs are 'b000\n1 The output of LUTn is 1 when the inputs are 'b000\nTRUTHn[1]\n0 The output of LUTn is 0 when the inputs are 'b001\n1 The output of LUTn is 1 when the inputs are 'b001\nTRUTHn[2]\n0 The output of LUTn is 0 when the inputs are 'b010\n1 The output of LUTn is 1 when the inputs are 'b010\nTRUTHn[3]\n0 The output of LUTn is 0 when the inputs are 'b011\n1 The output of LUTn is 1 when the inputs are 'b011\nTRUTHn[4]\n0 The output of LUTn is 0 when the inputs are 'b100\n1 The output of LUTn is 1 when the inputs are 'b100\nTRUTHn[5]\n0 The output of LUTn is 0 when the inputs are 'b101\n1 The output of LUTn is 1 when the inputs are 'b101\nTRUTHn[6]\n0 The output of LUTn is 0 when the inputs are 'b110\n1 The output of LUTn is 1 when the inputs are 'b110\nTRUTHn[7]\n0 The output of LUTn is 0 when the inputs are 'b111\n1 The output of LUTn is 1 when the inputs are 'b111"
+                }
+              ],
               "description": null
             },
             {
@@ -1987,7 +2047,16 @@
               "offset": "0xC",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TRUTH1",
+                  "caption": "Truth Table",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits determine the output of LUTn according to the LUTn-TRUTHSEL[2:0] inputs.\nBit Name Value Description\nTRUTHn[0]\n0 The output of LUTn is 0 when the inputs are 'b000\n1 The output of LUTn is 1 when the inputs are 'b000\nTRUTHn[1]\n0 The output of LUTn is 0 when the inputs are 'b001\n1 The output of LUTn is 1 when the inputs are 'b001\nTRUTHn[2]\n0 The output of LUTn is 0 when the inputs are 'b010\n1 The output of LUTn is 1 when the inputs are 'b010\nTRUTHn[3]\n0 The output of LUTn is 0 when the inputs are 'b011\n1 The output of LUTn is 1 when the inputs are 'b011\nTRUTHn[4]\n0 The output of LUTn is 0 when the inputs are 'b100\n1 The output of LUTn is 1 when the inputs are 'b100\nTRUTHn[5]\n0 The output of LUTn is 0 when the inputs are 'b101\n1 The output of LUTn is 1 when the inputs are 'b101\nTRUTHn[6]\n0 The output of LUTn is 0 when the inputs are 'b110\n1 The output of LUTn is 1 when the inputs are 'b110\nTRUTHn[7]\n0 The output of LUTn is 0 when the inputs are 'b111\n1 The output of LUTn is 1 when the inputs are 'b111"
+                }
+              ],
               "description": null
             }
           ]
@@ -2295,7 +2364,16 @@
               "offset": "0xE",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SP",
+                  "caption": "Stack Pointer Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit register."
+                }
+              ],
               "description": "The CPU.SP register holds the Stack Pointer (SP) that points to the top of the stack. After being reset, the SP points\nto the highest internal SRAM address.\nOnly the number of bits required to address the available data memory, including external memory (up to 64 KB), is\nimplemented for each device. Unused bits will always read '0'.\nThe CPU.SPL and CPU.SPH register pair represents the 16-bit value, CPU.SP. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nTo prevent corruption when updating the SP from software, a write to CPU.SPL will automatically disable interrupts\nfor the next four instructions or until the next I/O memory write, whichever comes first."
             },
             {
@@ -2305,7 +2383,16 @@
               "offset": "0xD",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SP",
+                  "caption": "Stack Pointer Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit register."
+                }
+              ],
               "description": "The CPU.SP register holds the Stack Pointer (SP) that points to the top of the stack. After being reset, the SP points\nto the highest internal SRAM address.\nOnly the number of bits required to address the available data memory, including external memory (up to 64 KB), is\nimplemented for each device. Unused bits will always read '0'.\nThe CPU.SPL and CPU.SPH register pair represents the 16-bit value, CPU.SP. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nTo prevent corruption when updating the SP from software, a write to CPU.SPL will automatically disable interrupts\nfor the next four instructions or until the next I/O memory write, whichever comes first."
             },
             {
@@ -2664,7 +2751,16 @@
               "offset": "0x1",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DATA",
+                  "caption": "Data",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field contains the digital data, which will be converted to an analog voltage."
+                }
+              ],
               "description": null
             }
           ]
@@ -2764,7 +2860,16 @@
               "offset": "0x00",
               "rw": "W",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "ASYNCSTROBE",
+                  "caption": "Asynchronous Channel Strobe",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "If the Strobe register location is written, each event channel will be inverted for one system clock cycle (i.e., a single\nevent is generated)."
+                }
+              ],
               "description": null
             },
             {
@@ -3021,7 +3126,16 @@
               "offset": "0x01",
               "rw": "W",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SYNCSTROBE",
+                  "caption": "Synchronous Channel Strobe",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "If the Strobe register location is written, each event channel will be inverted for one system clock cycle (i.e., a single\nevent is generated)."
+                }
+              ],
               "description": null
             },
             {
@@ -3083,7 +3197,16 @@
               "offset": "0x7",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "APPEND",
+                  "caption": "Application Code Section End",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field sets the end of the application code section in blocks of 256 bytes. The end of the application code\nsection will be set as (BOOT size) + (application code size). The remaining Flash will be application data. A value of\n0x00 defines the Flash from BOOTEND*256 to the end of Flash as the application code. When both FUSE.APPEND\nand FUSE.BOOTEND are 0x00, the entire Flash is the BOOT section."
+                }
+              ],
               "description": "The default value given in this fuse description is the factory-programmed value and should not be mistaken for the\nReset value."
             },
             {
@@ -3136,7 +3259,16 @@
               "offset": "0x8",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "BOOTEND",
+                  "caption": "Boot Section End",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field sets the end of the boot section in blocks of 256 bytes. A value of 0x00 defines the whole Flash as the\nBOOT section. When both FUSE.APPEND and FUSE.BOOTEND are 0x00, the entire Flash is the BOOT section."
+                }
+              ],
               "description": "The default value given in this fuse description is the factory-programmed value and should not be mistaken for the\nReset value."
             },
             {
@@ -3343,7 +3475,16 @@
               "offset": "0x0",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "GPIOR0",
+                  "caption": "General Purpose I/O Register Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "These are general purpose registers that can be used to store data, such as global variables and flags, in the bit-\naccessible I/O memory space."
             },
             {
@@ -3353,7 +3494,16 @@
               "offset": "0x1",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "GPIOR1",
+                  "caption": "General Purpose I/O Register Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "These are general purpose registers that can be used to store data, such as global variables and flags, in the bit-\naccessible I/O memory space."
             },
             {
@@ -3363,7 +3513,16 @@
               "offset": "0x2",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "GPIOR2",
+                  "caption": "General Purpose I/O Register Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "These are general purpose registers that can be used to store data, such as global variables and flags, in the bit-\naccessible I/O memory space."
             },
             {
@@ -3373,7 +3532,16 @@
               "offset": "0x3",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "GPIOR3",
+                  "caption": "General Purpose I/O Register Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "These are general purpose registers that can be used to store data, such as global variables and flags, in the bit-\naccessible I/O memory space."
             }
           ]
@@ -3430,7 +3598,24 @@
               "offset": "0x8",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "ADDR",
+                  "caption": "Interrupt Priority Level 0",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This register is used to modify the priority of the LVL0 interrupts. See the section Normal-Priority Interrupts for more\ninformation."
+                },
+                {
+                  "name": "ADDR",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The NVMCTRL.ADDRL and NVMCTRL.ADDRH register pair represents the 16-bit value, NVMCTRL.ADDR. The low\nbyte [7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset\n+ 0x01."
             },
             {
@@ -3486,7 +3671,24 @@
               "offset": "0x6",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DATA",
+                  "caption": "Interrupt Priority Level 0",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This register is used to modify the priority of the LVL0 interrupts. See the section Normal-Priority Interrupts for more\ninformation."
+                },
+                {
+                  "name": "DATA",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The NVMCTRL.DATAL and NVMCTRL.DATAH register pair represents the 16-bit value, NVMCTRL.DATA. The low\nbyte [7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset\n+ 0x01."
             },
             {
@@ -3583,7 +3785,16 @@
               "offset": "0x00",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DIR",
+                  "caption": "Data Direction",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver for each PORTx pin.\nThis bit field does not control the digital input buffer. The digital input buffer for pin n (Pxn) can be configured in the\nInput/Sense Configuration (ISC) bit field in the Pin n Control (PORTx.PINnCTRL) register.\nThe available configuration for each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                                                               |\n| :---- | :------------------------------------------------------------------------ |\n| 0     | Pxn is configured as an input-only pin, and the output driver is disabled |\n| 1     | Pxn is configured as an output pin, and the output driver is enabled      |\n\n"
+                }
+              ],
               "description": null
             },
             {
@@ -3593,7 +3804,16 @@
               "offset": "0x02",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DIRCLR",
+                  "caption": "Data Direction Clear",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will clear the corresponding bit in PORTx.DIR, which will configure pin n (Pxn) as\nan input-only pin and disable the output driver.\nReading this bit field will return the value of PORTx.DIR."
+                }
+              ],
               "description": null
             },
             {
@@ -3603,7 +3823,16 @@
               "offset": "0x01",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DIRSET",
+                  "caption": "Data Direction Set",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will set the corresponding bit in PORTx.DIR, which will configure pin n (Pxn) as an\noutput pin and enable the output driver.\nReading this bit field will return the value of PORTx.DIR."
+                }
+              ],
               "description": null
             },
             {
@@ -3613,7 +3842,16 @@
               "offset": "0x03",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DIRTGL",
+                  "caption": "Data Direction Toggle",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will toggle the corresponding bit in PORTx.DIR.\nReading this bit field will return the value of PORTx.DIR."
+                }
+              ],
               "description": null
             },
             {
@@ -3623,7 +3861,16 @@
               "offset": "0x08",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "IN",
+                  "caption": "Input Value",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field shows the state of the PORTx pins when the digital input buffer is enabled.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will toggle the corresponding bit in PORTx.OUT.\nIf the digital input buffer is disabled, the input is not sampled, and the bit value will not change. The digital input buffer\nfor pin n (Pxn) can be configured in the Input/Sense Configuration (ISC) bit field in the Pin n Control\n(PORTx.PINnCTRL) register.\nThe available states of each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                      |\n| :---- | :------------------------------- |\n| 0     | The voltage level on Pxn is low  |\n| 1     | The voltage level on Pxn is high |\n\n"
+                }
+              ],
               "description": null
             },
             {
@@ -3652,7 +3899,16 @@
               "offset": "0x04",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OUT",
+                  "caption": "Output Value",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver level for each PORTx pin.\nThis configuration only has an effect when the output driver (PORTx.DIR) is enabled for the corresponding pin.\nThe available configuration for each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                          |\n| :---- | :----------------------------------- |\n| 0     | The pin n (Pxn) output is driven low |\n| 1     | The Pxn output is driven high        |\n\n"
+                }
+              ],
               "description": null
             },
             {
@@ -3662,7 +3918,16 @@
               "offset": "0x06",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OUTCLR",
+                  "caption": "Output Value Clear",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver level for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will clear the corresponding bit in PORTx.OUT, which will configure the output for\npin n (Pxn) to be driven low.\nReading this bit field will return the value of PORTx.OUT."
+                }
+              ],
               "description": null
             },
             {
@@ -3672,7 +3937,16 @@
               "offset": "0x05",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OUTSET",
+                  "caption": "Output Value Set",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver level for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will set the corresponding bit in PORTx.OUT, which will configure the output for pin\nn (Pxn) to be driven high.\nReading this bit field will return the value of PORTx.OUT."
+                }
+              ],
               "description": null
             },
             {
@@ -3682,7 +3956,16 @@
               "offset": "0x07",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OUTTGL",
+                  "caption": "Output Value Toggle",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver level for each PORTx pin, without using a read-modify-write operation.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will toggle the corresponding bit in PORTx.OUT.\nReading this bit field will return the value of PORTx.OUT."
+                }
+              ],
               "description": null
             },
             {
@@ -4281,7 +4564,24 @@
               "offset": "0x0C",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit Compare register."
+                },
+                {
+                  "name": "CMP",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Compare register."
+                }
+              ],
               "description": "The RTC.CMPL and RTC.CMPH register pair represents the 16-bit value, RTC.CMP. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -4291,7 +4591,24 @@
               "offset": "0x08",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CNT",
+                  "caption": "Counter Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit Counter register."
+                },
+                {
+                  "name": "CNT",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The RTC.CNTL and RTC.CNTH register pair represents the 16-bit value, RTC.CNT. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nDue to the synchronization between the RTC clock and main clock domains, there is a latency of two RTC clock\ncycles from updating the register until this has an effect. The application software needs to check that the CNTBUSY\nflag in RTC.STATUS is cleared before writing to this register."
             },
             {
@@ -4409,7 +4726,24 @@
               "offset": "0x0A",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "PER",
+                  "caption": "Period Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit Period register."
+                },
+                {
+                  "name": "PER",
+                  "caption": "Period High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Period register."
+                }
+              ],
               "description": "The RTC.PERL and RTC.PERH register pair represents the 16-bit value, RTC.PER. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nDue to the synchronization between the RTC clock and main clock domains, there is a latency of two RTC clock\ncycles from updating the register until this has an effect. The application software needs to check that the PERBUSY\nflag in RTC.STATUS is cleared before writing to this register."
             },
             {
@@ -4565,7 +4899,16 @@
               "offset": "0x04",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TEMP",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                }
+              ],
               "description": "The Temporary register is used by the CPU for 16-bit single-cycle access to the 16-bit registers of this peripheral. The\nregister is common for all the 16-bit registers of this peripheral and can be read and written by software. For more\ndetails on reading and writing 16-bit registers, refer to Accessing 16-Bit Registers in the AVR CPU section."
             }
           ]
@@ -4589,7 +4932,16 @@
               "offset": "0x00",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DEVICEID0",
+                  "caption": "Byte n of the Device ID",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has a device ID identifying this device and its properties such as memory sizes, pin count, and die\nrevision. This ID can be used to identify a device and hence, the available features by software. The Device ID\nconsists of three bytes: SIGROW.DEVICEID[2:0]."
             },
             {
@@ -4599,7 +4951,16 @@
               "offset": "0x01",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DEVICEID1",
+                  "caption": "Byte n of the Device ID",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has a device ID identifying this device and its properties such as memory sizes, pin count, and die\nrevision. This ID can be used to identify a device and hence, the available features by software. The Device ID\nconsists of three bytes: SIGROW.DEVICEID[2:0]."
             },
             {
@@ -4609,7 +4970,16 @@
               "offset": "0x02",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DEVICEID2",
+                  "caption": "Byte n of the Device ID",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has a device ID identifying this device and its properties such as memory sizes, pin count, and die\nrevision. This ID can be used to identify a device and hence, the available features by software. The Device ID\nconsists of three bytes: SIGROW.DEVICEID[2:0]."
             },
             {
@@ -4619,7 +4989,16 @@
               "offset": "0x22",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OSC16ERR3V",
+                  "caption": "OSC16 Error at 3V",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These registers contain the signed oscillator frequency error value relative to the nominal oscillator frequency when\nrunning at an internal 16 MHz at 3V, as measured during production."
+                }
+              ],
               "description": null
             },
             {
@@ -4629,7 +5008,16 @@
               "offset": "0x23",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OSC16ERR5V",
+                  "caption": "OSC16 Error at 5V",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These registers contain the signed oscillator frequency error value relative to the nominal oscillator frequency when\nrunning at an internal 16 MHz at 5V, as measured during production."
+                }
+              ],
               "description": null
             },
             {
@@ -4639,7 +5027,16 @@
               "offset": "0x24",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OSC20ERR3V",
+                  "caption": "OSC20 Error at 3V",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These registers contain the signed oscillator frequency error value relative to the nominal oscillator frequency when\nrunning at an internal 20 MHz at 3V, as measured during production."
+                }
+              ],
               "description": null
             },
             {
@@ -4649,7 +5046,16 @@
               "offset": "0x25",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OSC20ERR5V",
+                  "caption": "OSC20 Error at 5V",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These registers contain the signed oscillator frequency error value relative to the nominal oscillator frequency when\nrunning at an internal 20 MHz at 5V, as measured during production."
+                }
+              ],
               "description": null
             },
             {
@@ -4659,7 +5065,16 @@
               "offset": "0x03",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM0",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4669,7 +5084,16 @@
               "offset": "0x04",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM1",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4679,7 +5103,16 @@
               "offset": "0x05",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM2",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4689,7 +5122,16 @@
               "offset": "0x06",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM3",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4699,7 +5141,16 @@
               "offset": "0x07",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM4",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4709,7 +5160,16 @@
               "offset": "0x08",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM5",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4719,7 +5179,16 @@
               "offset": "0x09",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM6",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4729,7 +5198,16 @@
               "offset": "0x0A",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM7",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4739,7 +5217,16 @@
               "offset": "0x0B",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM8",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4749,7 +5236,16 @@
               "offset": "0x0C",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SERNUM9",
+                  "caption": "Serial Number Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "Each device has an individual serial number, representing a unique ID. This ID can be used to identify a specific\ndevice in the field. The serial number consists of ten bytes: SIGROW.SERNUM[9:0]."
             },
             {
@@ -4759,7 +5255,16 @@
               "offset": "0x20",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TEMPSENSE0",
+                  "caption": "Temperature Sensor Calibration Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Refer to the ADC section for a description of how to use this register."
+                }
+              ],
               "description": "The Temperature Sensor Calibration registers contain correction factors for temperature measurements from the on-\nchip sensor. The ADC.SIGROW.TEMPSENSE0 is a correction factor for the gain/slope (unsigned), and\nSIGROW.TEMPSENSE1 is a correction factor for the offset (signed)."
             },
             {
@@ -4769,7 +5274,16 @@
               "offset": "0x21",
               "rw": "R",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TEMPSENSE1",
+                  "caption": "Temperature Sensor Calibration Byte n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Refer to the ADC section for a description of how to use this register."
+                }
+              ],
               "description": "The Temperature Sensor Calibration registers contain correction factors for temperature measurements from the on-\nchip sensor. The ADC.SIGROW.TEMPSENSE0 is a correction factor for the gain/slope (unsigned), and\nSIGROW.TEMPSENSE1 is a correction factor for the offset (signed)."
             }
           ]
@@ -4928,7 +5442,16 @@
               "offset": "0x4",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DATA",
+                  "caption": "SPI Data",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "The DATA register is used for sending and receiving data. Writing to the register initiates the data transmission when\nin Host mode while preparing data for sending in Client mode. The byte written to the register shifts out on the SPI\noutput line when a transaction is initiated.\nThe SPIn.DATA register is not a physical register. Depending on what mode is configured, it is mapped to other\nregisters, as described below.\n* Normal mode:\n- Writing the DATA register will write the shift register\n- Reading from DATA will read from the Receive Data register\n* Buffer mode:\n- Writing the DATA register will write to the Transmit Data Buffer register\n- Reading from DATA will read from the Receive Data Buffer register. The contents of the Receive Data\nregister will then be moved to the Receive Data Buffer register."
+                }
+              ],
               "description": null
             },
             {
@@ -4989,7 +5512,16 @@
               "offset": "0x3",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "INTFLAGS",
+                  "caption": "SPI Data",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "The DATA register is used for sending and receiving data. Writing to the register initiates the data transmission when\nin Host mode while preparing data for sending in Client mode. The byte written to the register shifts out on the SPI\noutput line when a transaction is initiated.\nThe SPIn.DATA register is not a physical register. Depending on what mode is configured, it is mapped to other\nregisters, as described below.\n* Normal mode:\n- Writing the DATA register will write the shift register\n- Reading from DATA will read from the Receive Data register\n* Buffer mode:\n- Writing the DATA register will write to the Transmit Data Buffer register\n- Reading from DATA will read from the Receive Data Buffer register. The contents of the Receive Data\nregister will then be moved to the Receive Data Buffer register."
+                }
+              ],
               "description": null
             }
           ]
@@ -5032,7 +5564,16 @@
               "offset": "0x01",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "REVID",
+                  "caption": "Revision ID",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field contains the device revision. 0x00 = A, 0x01 = B, and so on."
+                }
+              ],
               "description": "This register is read-only and displays the device revision ID."
             }
           ]
@@ -5056,7 +5597,24 @@
               "offset": "0x28",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP0",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit filed holds the LSB of the 16-bit Compare register."
+                },
+                {
+                  "name": "CMP0",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare register."
+                }
+              ],
               "description": "This register is continuously compared to the counter value. Normally, the outputs from the comparators are used to\ngenerate waveforms.\nThe TCAn.CMPn registers are updated with the buffer value from their corresponding TCAn.CMPnBUF register when\nan UPDATE condition occurs.\nThe TCAn.CMPnL and TCAn.CMPnH register pair represents the 16-bit value, TCAn.CMPn. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5066,7 +5624,24 @@
               "offset": "0x38",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP0BUF",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Compare Buffer register."
+                },
+                {
+                  "name": "CMP0BUF",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare Buffer register."
+                }
+              ],
               "description": "This register serves as the buffer for the associated Compare n (TCAn.CMPn) register. Writing to this register from\nthe CPU or UPDI will set the Compare Buffer valid (CMPnBV) bit in the TCAn.CTRLF register.\nThe TCAn.CMPnBUFL and TCAn.CMPnBUFH register pair represents the 16-bit value, TCAn.CMPnBUF. The low\nbyte [7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset\n+ 0x01."
             },
             {
@@ -5076,7 +5651,24 @@
               "offset": "0x2A",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP1",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit filed holds the LSB of the 16-bit Compare register."
+                },
+                {
+                  "name": "CMP1",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare register."
+                }
+              ],
               "description": "This register is continuously compared to the counter value. Normally, the outputs from the comparators are used to\ngenerate waveforms.\nThe TCAn.CMPn registers are updated with the buffer value from their corresponding TCAn.CMPnBUF register when\nan UPDATE condition occurs.\nThe TCAn.CMPnL and TCAn.CMPnH register pair represents the 16-bit value, TCAn.CMPn. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5086,7 +5678,24 @@
               "offset": "0x3A",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP1BUF",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Compare Buffer register."
+                },
+                {
+                  "name": "CMP1BUF",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare Buffer register."
+                }
+              ],
               "description": "This register serves as the buffer for the associated Compare n (TCAn.CMPn) register. Writing to this register from\nthe CPU or UPDI will set the Compare Buffer valid (CMPnBV) bit in the TCAn.CTRLF register.\nThe TCAn.CMPnBUFL and TCAn.CMPnBUFH register pair represents the 16-bit value, TCAn.CMPnBUF. The low\nbyte [7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset\n+ 0x01."
             },
             {
@@ -5096,7 +5705,24 @@
               "offset": "0x2C",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP2",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit filed holds the LSB of the 16-bit Compare register."
+                },
+                {
+                  "name": "CMP2",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare register."
+                }
+              ],
               "description": "This register is continuously compared to the counter value. Normally, the outputs from the comparators are used to\ngenerate waveforms.\nThe TCAn.CMPn registers are updated with the buffer value from their corresponding TCAn.CMPnBUF register when\nan UPDATE condition occurs.\nThe TCAn.CMPnL and TCAn.CMPnH register pair represents the 16-bit value, TCAn.CMPn. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5106,7 +5732,24 @@
               "offset": "0x3C",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMP2BUF",
+                  "caption": "Compare Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Compare Buffer register."
+                },
+                {
+                  "name": "CMP2BUF",
+                  "caption": "Compare High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Compare Buffer register."
+                }
+              ],
               "description": "This register serves as the buffer for the associated Compare n (TCAn.CMPn) register. Writing to this register from\nthe CPU or UPDI will set the Compare Buffer valid (CMPnBV) bit in the TCAn.CTRLF register.\nThe TCAn.CMPnBUFL and TCAn.CMPnBUFH register pair represents the 16-bit value, TCAn.CMPnBUF. The low\nbyte [7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset\n+ 0x01."
             },
             {
@@ -5116,7 +5759,24 @@
               "offset": "0x20",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CNT",
+                  "caption": "Counter Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Counter register."
+                },
+                {
+                  "name": "CNT",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCAn.CNTL and TCAn.CNTH register pair represents the 16-bit value, TCAn.CNT. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5546,7 +6206,24 @@
               "offset": "0x26",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "PER",
+                  "caption": "Periodic Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Period register."
+                },
+                {
+                  "name": "PER",
+                  "caption": "Periodic High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Period register."
+                }
+              ],
               "description": "The TCAn.PER register contains the 16-bit TOP value in the timer/counter in all modes of operation, except\nFrequency Waveform Generation (FRQ).\nThe TCAn.PERL and TCAn.PERH register pair represents the 16-bit value, TCAn.PER. The low byte [7:0] (suffix L)\nis accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5556,7 +6233,24 @@
               "offset": "0x36",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "PERBUF",
+                  "caption": "Period Buffer Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Period Buffer register."
+                },
+                {
+                  "name": "PERBUF",
+                  "caption": "Period Buffer High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Period Buffer register."
+                }
+              ],
               "description": "This register serves as the buffer for the Period (TCAn.PER) register. Writing to this register from the CPU or UPDI\nwill set the Period Buffer Valid (PERBV) bit in the TCAn.CTRLF register.\nThe TCAn.PERBUFL and TCAn.PERBUFH register pair represents the 16-bit value, TCAn.PERBUF. The low byte\n[7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01."
             },
             {
@@ -5566,7 +6260,16 @@
               "offset": "0x0F",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TEMP",
+                  "caption": "Temporary Bits for 16-bit Access",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "The Temporary register is used by the CPU for 16-bit single-cycle access to the 16-bit registers of this peripheral. The\nregister is common for all the 16-bit registers of this peripheral and can be read and written by software. For more\ndetails on reading and writing 16-bit registers, refer to Accessing 16-Bit Registers in the AVR CPU section."
             }
           ]
@@ -5804,7 +6507,16 @@
               "offset": "0x29",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "HCMP0",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.HCNT."
+                }
+              ],
               "description": "The TCAn.HCMPn register represents the compare value of Compare Channel n for the high byte timer. This register\nis continuously compared to the counter value of the high byte timer, TCAn.HCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5814,7 +6526,16 @@
               "offset": "0x2B",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "HCMP1",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.HCNT."
+                }
+              ],
               "description": "The TCAn.HCMPn register represents the compare value of Compare Channel n for the high byte timer. This register\nis continuously compared to the counter value of the high byte timer, TCAn.HCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5824,7 +6545,16 @@
               "offset": "0x2D",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "HCMP2",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.HCNT."
+                }
+              ],
               "description": "The TCAn.HCMPn register represents the compare value of Compare Channel n for the high byte timer. This register\nis continuously compared to the counter value of the high byte timer, TCAn.HCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5834,7 +6564,16 @@
               "offset": "0x21",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "HCNT",
+                  "caption": "Counter Value for High Byte Timer",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field defines the counter value in high byte timer."
+                }
+              ],
               "description": "The TCAn.HCNT register contains the counter value for the high byte timer. CPU and UPDI write access has priority\nover count, clear or reload of the counter."
             },
             {
@@ -5844,7 +6583,16 @@
               "offset": "0x27",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "HPER",
+                  "caption": "Period Value High Byte Timer",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the TOP value for the high byte timer."
+                }
+              ],
               "description": "The TCAn.HPER register contains the TOP value for the high byte timer."
             },
             {
@@ -5956,7 +6704,16 @@
               "offset": "0x28",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "LCMP0",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.LCNT."
+                }
+              ],
               "description": "The TCAn.LCMPn register represents the compare value of Compare Channel n for the low byte timer. This register\nis continuously compared to the counter value of the low byte timer, TCAn.LCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5966,7 +6723,16 @@
               "offset": "0x2A",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "LCMP1",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.LCNT."
+                }
+              ],
               "description": "The TCAn.LCMPn register represents the compare value of Compare Channel n for the low byte timer. This register\nis continuously compared to the counter value of the low byte timer, TCAn.LCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5976,7 +6742,16 @@
               "offset": "0x2C",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "LCMP2",
+                  "caption": "Compare Value of Channel n",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the compare value of channel n that is compared to TCAn.LCNT."
+                }
+              ],
               "description": "The TCAn.LCMPn register represents the compare value of Compare Channel n for the low byte timer. This register\nis continuously compared to the counter value of the low byte timer, TCAn.LCNT. Normally, the outputs from the\ncomparators are then used to generate waveforms."
             },
             {
@@ -5986,7 +6761,16 @@
               "offset": "0x20",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "LCNT",
+                  "caption": "Counter Value for Low Byte Timer",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field defines the counter value of the low byte timer."
+                }
+              ],
               "description": "The TCAn.LCNT register contains the counter value for the low byte timer. CPU and UPDI write access has priority\nover count, clear or reload of the counter."
             },
             {
@@ -5996,7 +6780,16 @@
               "offset": "0x26",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "LPER",
+                  "caption": "Period Value Low Byte Timer",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the TOP value for the low byte timer."
+                }
+              ],
               "description": "The TCAn.LPER register contains the TOP value for the low byte timer."
             }
           ]
@@ -6020,7 +6813,24 @@
               "offset": "0xC",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CCMP",
+                  "caption": "Capture/Compare Value Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit compare, capture, and top value."
+                },
+                {
+                  "name": "CCMP",
+                  "caption": "Capture/Compare Value High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit compare, capture, and top value."
+                }
+              ],
               "description": "The TCBn.CCMPL and TCBn.CCMPH register pair represents the 16-bit value TCBn.CCMP. The low byte [7:0]\n(suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nThis register has different functions depending on the mode of operation:\n* For Capture operation, these registers contain the captured value of the counter at the time the capture occurs\n* In Periodic Interrupt/Time-Out and Single-Shot mode, this register acts as the TOP value\n* In 8-bit PWM mode, TCBn.CCMPL and TCBn.CCMPH act as two independent registers: The period of the\nwaveform is controlled by CCMPL, while CCMPH controls the duty cycle."
             },
             {
@@ -6030,7 +6840,24 @@
               "offset": "0xA",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CNT",
+                  "caption": "Count Value Low",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the LSB of the 16-bit Counter register."
+                },
+                {
+                  "name": "CNT",
+                  "caption": "Count Value High",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCBn.CNTL and TCBn.CNTH register pair represents the 16-bit value TCBn.CNT. The low byte [7:0] (suffix L) is\naccessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nCPU and UPDI write access has priority over internal updates of the register."
             },
             {
@@ -6237,7 +7064,16 @@
               "offset": "0x9",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "TEMP",
+                  "caption": "Temporary Value",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": ""
+                }
+              ],
               "description": "The Temporary register is used by the CPU for 16-bit single-cycle access to the 16-bit registers of this peripheral. The\nregister is common for all the 16-bit registers of this peripheral and can be read and written by software. For more\ndetails on reading and writing 16-bit registers, refer to Accessing 16-Bit Registers in the AVR CPU section."
             }
           ]
@@ -6261,7 +7097,24 @@
               "offset": "0x22",
               "rw": "R",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CAPTUREA",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CAPTUREA",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CAPTUREAL and TCDn.CAPTUREAH register pair represents the 12-bit TCDn.CAPTUREA value.\nFor capture operation, these registers constitute the second buffer level and access point for the CPU. The\nTCDn.CAPTUREA registers are updated with the buffer value when an update condition occurs. The CAPTURE A\nregister contains the TCD counter value when a trigger A or software capture A occurs.\nThe TCD counter value is synchronized to CAPTUREA by either software or an event.\nThe capture register is blocked for an update of new capture data until the higher byte of this register is read."
             },
             {
@@ -6271,7 +7124,24 @@
               "offset": "0x24",
               "rw": "R",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CAPTUREB",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CAPTUREB",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CAPTUREBL and TCDn.CAPTUREBH register pair represents the 12-bit TCDn.CAPTUREB value.\nFor capture operation, these registers constitute the second buffer level and access point for the CPU. The\nTCDn.CAPTUREB registers are updated with the buffer value when an update condition occurs. The CAPTURE B\nregister contains the TCD counter value when a trigger B or software capture B occurs.\nThe TCD counter value is synchronized to CAPTUREB by either software or an event.\nThe capture register is blocked for an update of new capture data until the higher byte of this register is read."
             },
             {
@@ -6281,7 +7151,24 @@
               "offset": "0x2A",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMPACLR",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CMPACLR",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CMPACLRL and TCDn.CMPACLRH register pair represents the 12-bit TCDn.CMPACLR value. This\nregister is continuously compared to the counter value. Then, the outputs from the comparators are used for\ngenerating waveforms."
             },
             {
@@ -6291,7 +7178,24 @@
               "offset": "0x28",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMPASET",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CMPASET",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CMPASETL and TCDn.CMPASETH register pair represents the 12-bit TCDn.CMPASET value. This\nregister is continuously compared to the counter value. Then, the outputs from the comparators are used for\ngenerating waveforms."
             },
             {
@@ -6301,7 +7205,24 @@
               "offset": "0x2E",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMPBCLR",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CMPBCLR",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CMPBCLRL and TCDn.CMPBCLRH register pair represents the 12-bit TCDn.CMPBCLR value. This\nregister is continuously compared to the counter value. Then, the outputs from the comparators are used for\ngenerating waveforms."
             },
             {
@@ -6311,7 +7232,24 @@
               "offset": "0x2C",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CMPBSET",
+                  "caption": "Temporary",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "Temporary register for read/write operations in 16-bit registers."
+                },
+                {
+                  "name": "CMPBSET",
+                  "caption": "Counter High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "These bits hold the MSB of the 16-bit Counter register."
+                }
+              ],
               "description": "The TCDn.CMPBSETL and TCDn.CMPBSETH register pair represents the 12-bit TCDn.CMPBSET value. This\nregister is continuously compared to the counter value. Then, the outputs from the comparators are used for\ngenerating waveforms."
             },
             {
@@ -7019,7 +7957,16 @@
               "offset": "0x7",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "MADDR",
+                  "caption": "Address",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This register contains the address of the external client device. When this bit field is written, the TWI will issue a Start\ncondition, and the shift register performs a byte transmit operation on the bus depending on the bus state.\nThis register can be read at any time without interfering with the ongoing bus activity since a read access does not\ntrigger the host logic to perform any bus protocol related operations.\nThe host control logic uses the bit 0 of this register as the R/W direction bit."
+                }
+              ],
               "description": null
             },
             {
@@ -7029,7 +7976,16 @@
               "offset": "0x6",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "MBAUD",
+                  "caption": "Baud Rate",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field is used to derive the SCL high and low time. It must be written while the host is disabled. The host can\nbe disabled by writing '0' to the Enable TWI Host (ENABLE) bit from the Host Control A (TWIn.MCTRLA) register.\nRefer to the Clock Generation section for more information on how to calculate the frequency of the SCL."
+                }
+              ],
               "description": null
             },
             {
@@ -7133,7 +8089,16 @@
               "offset": "0x8",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "MDATA",
+                  "caption": "Data",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field provides direct access to the host's physical shift register, which is used to shift out data on the bus\n(transmit) and to shift in data received from the bus (receive). The direct access implies that the MDATA register\ncannot be accessed during byte transmissions.\nReading valid data or writing data to be transmitted can only be successful when the CLKHOLD bit is read as '1' or\nwhen an interrupt occurs.\nA write access to the MDATA register will command the host to perform a byte transmit operation on the bus, directly\nfollowed by receiving the Acknowledge bit from the client. This is independent of the Acknowledge Action (ACKACT)\nbit from the Host Control B (TWIn.MCTRLB) register. The write operation is performed regardless of winning or losing\narbitration before the Write Interrupt Flag (WIF) is set to '1'.\nIf the Smart Mode Enable (SMEN) bit in the Host Control A (TWIn.MCTRLA) register is set to '1', a read access to\nthe MDATA register will command the host to perform an acknowledge action. This is dependent on the setting of the\nAcknowledge Action (ACKACT) bit from the Host Control B (TWIn.MCTRLB) register.\nNotes:"
+                }
+              ],
               "description": null
             },
             {
@@ -7210,7 +8175,16 @@
               "offset": "0xC",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SADDR",
+                  "caption": "Address",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "The Client Address (TWIn.SADDR) register is used by the client address match logic to determine if a host device\nhas addressed the TWI client. The Address or Stop Interrupt Flag (APIF) and the Address or Stop (AP) bit in the\nClient Status (TWIn.SSTATUS) register are set to '1' if an address packet is received.\nThe upper seven bits (ADDR[7:1]) of the TWIn.SADDR register represent the main client address.\nThe Least Significant bit (ADDR[0]) of the TWIn.SADDR register is used for the recognition of the General Call\nAddress (0x00) of the I2C protocol. This feature is enabled when this bit is set to '1'."
+                }
+              ],
               "description": null
             },
             {
@@ -7333,7 +8307,16 @@
               "offset": "0xD",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "SDATA",
+                  "caption": "Data",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field provides access to the client data register.\nReading valid data or writing data to be transmitted can only be achieved when the SCL is held low by the client (i.e.,\nwhen the client CLKHOLD bit is set to '1'). It is not necessary to check the Clock Hold (CLKHOLD) bit from the Client\nStatus (TWIn.SSTATUS) register in software before accessing the SDATA register if the software keeps track of the\npresent protocol state by using interrupts or observing the interrupt flags.\nIf the Smart Mode Enable (SMEN) bit in the Client Control A (TWIn.SCTRLA) register is set to '1', a read access to\nthe SDATA register, when the clock hold is active, auto-triggers bus operations and will command the client to\nperform an acknowledge action. This is dependent on the setting of the Acknowledge Action (ACKACT) bit from the\nClient Control B (TWIn.SCTRLB) register."
+                }
+              ],
               "description": null
             },
             {
@@ -7432,7 +8415,24 @@
               "offset": "0x8",
               "rw": "RW",
               "size": 2,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "BAUD",
+                  "caption": "USART Baud Rate Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Baud register."
+                },
+                {
+                  "name": "BAUD",
+                  "caption": "USART Baud Rate High Byte",
+                  "mask": "0xff00",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the MSB of the 16-bit Baud register."
+                }
+              ],
               "description": "The USARTn.BAUDL and USARTn.BAUDH register pair represents the 16-bit value, USARTn.BAUD. The low byte\n[7:0] (suffix L) is accessible at the original offset. The high byte [15:8] (suffix H) can be accessed at offset + 0x01.\nOngoing transmissions of the transmitter and receiver will be corrupted if the baud rate is changed. Writing to this\nregister will trigger an immediate update of the baud rate prescaler. For more information on how to set the baud rate,\nsee Table 24-1."
             },
             {
@@ -7568,7 +8568,16 @@
               "offset": "0x7",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "CTRLC",
+                  "caption": "USART Baud Rate Low Byte",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field holds the LSB of the 16-bit Baud register."
+                }
+              ],
               "description": "This register description is valid for all modes except the Host SPI mode. When the USART Communication Mode\n(CMODE) bit field in this register is written to 'MSPI', see CTRLC - Host SPI mode for the correct description."
             },
             {
@@ -8177,7 +9186,16 @@
               "offset": "0x0",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "DIR",
+                  "caption": "Data Direction",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver for each PORTx pin.\nThis bit field does not control the digital input buffer. The digital input buffer for pin n (Pxn) can be configured in the\nInput/Sense Configuration (ISC) bit field in the Pin n Control (PORTx.PINnCTRL) register.\nThe available configuration for each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                                                               |\n| :---- | :------------------------------------------------------------------------ |\n| 0     | Pxn is configured as an input-only pin, and the output driver is disabled |\n| 1     | Pxn is configured as an output pin, and the output driver is enabled      |\n\n"
+                }
+              ],
               "description": "Access to the Virtual PORT registers has the same outcome as access to the regular registers but allows for memory\nspecific instructions, such as bit manipulation instructions, which cannot be used in the extended I/O Register space\nwhere the regular PORT registers reside."
             },
             {
@@ -8187,7 +9205,16 @@
               "offset": "0x2",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "IN",
+                  "caption": "Input Value",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field shows the state of the PORTx pins when the digital input buffer is enabled.\nWriting a '0' to bit n in this bit field has no effect.\nWriting a '1' to bit n in this bit field will toggle the corresponding bit in PORTx.OUT.\nIf the digital input buffer is disabled, the input is not sampled, and the bit value will not change. The digital input buffer\nfor pin n (Pxn) can be configured in the Input/Sense Configuration (ISC) bit field in the Pin n Control\n(PORTx.PINnCTRL) register.\nThe available states of each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                      |\n| :---- | :------------------------------- |\n| 0     | The voltage level on Pxn is low  |\n| 1     | The voltage level on Pxn is high |\n\n"
+                }
+              ],
               "description": "Access to the Virtual PORT registers has the same outcome as access to the regular registers but allows for memory\nspecific instructions, such as bit manipulation instructions, which cannot be used in the extended I/O Register space\nwhere the regular PORT registers reside."
             },
             {
@@ -8216,7 +9243,16 @@
               "offset": "0x1",
               "rw": "RW",
               "size": 1,
-              "bitfields": null,
+              "bitfields": [
+                {
+                  "name": "OUT",
+                  "caption": "Output Value",
+                  "mask": "0xff",
+                  "rw": "unknown",
+                  "values_ref": null,
+                  "description": "This bit field controls the output driver level for each PORTx pin.\nThis configuration only has an effect when the output driver (PORTx.DIR) is enabled for the corresponding pin.\nThe available configuration for each bit n in this bit field is shown in the table below.\n\n\n| Value | Description                          |\n| :---- | :----------------------------------- |\n| 0     | The pin n (Pxn) output is driven low |\n| 1     | The Pxn output is driven high        |\n\n"
+                }
+              ],
               "description": "Access to the Virtual PORT registers has the same outcome as access to the regular registers but allows for memory\nspecific instructions, such as bit manipulation instructions, which cannot be used in the extended I/O Register space\nwhere the regular PORT registers reside."
             }
           ]
