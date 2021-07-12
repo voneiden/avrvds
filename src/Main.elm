@@ -5,7 +5,8 @@ module Main exposing (..)
 import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
-import Data.Chip exposing (ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
+import CustomMarkdown exposing (defaultHtmlRenderer)
+import Data.Chip exposing (Bitfield, ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
 import Data.Util.DeviceModuleCategory as DeviceModuleCategory
 import Data.Util.Module as Module
@@ -13,12 +14,14 @@ import Data.Util.Pad as Pad
 --import Debug exposing (toString)
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
-import Html exposing (Html, a, button, div, h2, h3, input, label, text)
+import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
-import List exposing (append, concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
+import List exposing (concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
+import Markdown.Parser
+import Markdown.Renderer exposing (Renderer)
 import Maybe exposing (map2, withDefault)
 import String exposing (endsWith, fromInt, join, replace)
 import Tuple exposing (first, second)
@@ -102,7 +105,7 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     --(Loading, getDefinition)
-    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny202" )
+    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny814" )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -546,18 +549,22 @@ viewChip state signals =
                     ]
                 ]
 
+viewBitfield : Bitfield -> Html Msg
+viewBitfield bitfield =
+    div [] <| [h4 [] [text bitfield.caption]]
+    ++
+    render defaultHtmlRenderer (Maybe.withDefault "" bitfield.description)
 
 viewRegister : Register -> Html Msg
 viewRegister register =
     div [] <|
-        [ h3 [] [text register.name]
-        , text <| Maybe.withDefault "" register.description
-        ] ++
-        case register.bitfields of
+        [ h3 [] [text register.name]]
+        ++ render defaultHtmlRenderer (Maybe.withDefault "" register.description)
+        ++ case register.bitfields of
             Nothing ->
                 [text "No bitfields"]
             Just bitfields ->
-                [text "Bitfields!"]
+                map viewBitfield bitfields
 
 
 
@@ -605,6 +612,34 @@ viewModule state =
                 [] ->
                     div [] [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
 
+viewChipSelect : State -> Html Msg
+viewChipSelect state =
+    div []
+        [ a [href "#", onClick <| RequestDefinition "ATtiny202"] [ text "ATtiny202" ]
+        , text " | "
+        , a [href "#", onClick <| RequestDefinition "ATtiny814"] [ text "ATtiny814" ]
+        ]
+
+test =
+    let
+        foo = defaultHtmlRenderer
+    in
+    0
+
+render : Renderer (Html Msg) -> String -> List (Html Msg)
+render renderer markdown =
+    markdown
+        |> Markdown.Parser.parse
+        |> Result.mapError deadEndsToString
+        |> Result.andThen (\ast -> Markdown.Renderer.render renderer ast)
+        |> Result.withDefault [text "Markdown render failed"]
+
+deadEndsToString deadEnds =
+    deadEnds
+        |> List.map Markdown.Parser.deadEndToString
+        |> String.join "\n"
+
+
 viewGif : Model -> Html Msg
 viewGif model =
     case model of
@@ -649,7 +684,8 @@ viewGif model =
         Success _ state ->
             div []
                 [ div []
-                    [ viewChip state  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
+                    [ viewChipSelect state
+                    , viewChip state  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
                     , viewModule state
                     -- viewChip pinout (getSignalsFromDevice device))
                     ]
