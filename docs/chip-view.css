@@ -122,6 +122,10 @@
   color: white;
   background-color: #e23333;
 }
+#chip-view .pin-signal.SPI0_ALT .pin-label {
+  color: white;
+  background: repeating-linear-gradient(45deg, #e23333, #e23333 10px, #af2626 0, #af2626 20px);
+}
 #chip-view .pin-signal.TWI0 .pin-label {
   background-color: yellow;
 }
