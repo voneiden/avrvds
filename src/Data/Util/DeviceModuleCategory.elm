@@ -52,16 +52,7 @@ fromString deviceModuleCategory =
 
 decode : String -> Decoder DeviceModuleCategory
 decode deviceModuleCategory =
-    case deviceModuleCategory of
-        "IO" -> Decode.succeed IO
-        "INTERFACE" -> Decode.succeed INTERFACE
-        "ANALOG" -> Decode.succeed ANALOG
-        "TIMER" -> Decode.succeed TIMER
-        "EVENT" -> Decode.succeed EVENT
-        "LOGIC" -> Decode.succeed LOGIC
-        "TOUCH" -> Decode.succeed TOUCH
-        "CLOCKCONTROL" -> Decode.succeed CLOCKCONTROL
-        "DEBUG" -> Decode.succeed DEBUG
-        "OTHER" -> Decode.succeed OTHER
-        _ -> Decode.fail <| "Unsupported deviceModuleCategory: " ++ deviceModuleCategory
+    case fromString deviceModuleCategory of
+        Just deviceModuleCategory_ -> Decode.succeed deviceModuleCategory_
+        Nothing -> Decode.fail <| "Unsupported deviceModuleCategory: " ++ deviceModuleCategory
 

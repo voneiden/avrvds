@@ -76,24 +76,7 @@ fromString pad =
 
 decode : String -> Decoder Pad
 decode pad =
-    case pad of
-        "VDD" -> Decode.succeed VDD
-        "GND" -> Decode.succeed GND
-        "PA0" -> Decode.succeed PA0
-        "PA1" -> Decode.succeed PA1
-        "PA2" -> Decode.succeed PA2
-        "PA3" -> Decode.succeed PA3
-        "PA4" -> Decode.succeed PA4
-        "PA5" -> Decode.succeed PA5
-        "PA6" -> Decode.succeed PA6
-        "PA7" -> Decode.succeed PA7
-        "PB0" -> Decode.succeed PB0
-        "PB1" -> Decode.succeed PB1
-        "PB2" -> Decode.succeed PB2
-        "PB3" -> Decode.succeed PB3
-        "PB4" -> Decode.succeed PB4
-        "PB5" -> Decode.succeed PB5
-        "PB6" -> Decode.succeed PB6
-        "PB7" -> Decode.succeed PB7
-        _ -> Decode.fail <| "Unsupported pad: " ++ pad
+    case fromString pad of
+        Just pad_ -> Decode.succeed pad_
+        Nothing -> Decode.fail <| "Unsupported pad: " ++ pad
 

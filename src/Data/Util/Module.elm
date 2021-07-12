@@ -121,39 +121,7 @@ fromString moduleValue =
 
 decode : String -> Decoder Module
 decode moduleValue =
-    case moduleValue of
-        "PORT" -> Decode.succeed PORT
-        "TWI" -> Decode.succeed TWI
-        "SPI" -> Decode.succeed SPI
-        "USART" -> Decode.succeed USART
-        "ADC" -> Decode.succeed ADC
-        "AC" -> Decode.succeed AC
-        "DAC" -> Decode.succeed DAC
-        "TCA" -> Decode.succeed TCA
-        "TCB" -> Decode.succeed TCB
-        "TCD" -> Decode.succeed TCD
-        "EVSYS" -> Decode.succeed EVSYS
-        "CCL" -> Decode.succeed CCL
-        "PTC" -> Decode.succeed PTC
-        "BOD" -> Decode.succeed BOD
-        "CLKCTRL" -> Decode.succeed CLKCTRL
-        "CPU" -> Decode.succeed CPU
-        "CPUINT" -> Decode.succeed CPUINT
-        "CRCSCAN" -> Decode.succeed CRCSCAN
-        "FUSE" -> Decode.succeed FUSE
-        "GPIO" -> Decode.succeed GPIO
-        "LOCKBIT" -> Decode.succeed LOCKBIT
-        "NVMCTRL" -> Decode.succeed NVMCTRL
-        "PORTMUX" -> Decode.succeed PORTMUX
-        "RSTCTRL" -> Decode.succeed RSTCTRL
-        "RTC" -> Decode.succeed RTC
-        "SIGROW" -> Decode.succeed SIGROW
-        "SLPCTRL" -> Decode.succeed SLPCTRL
-        "SYSCFG" -> Decode.succeed SYSCFG
-        "USERROW" -> Decode.succeed USERROW
-        "VPORT" -> Decode.succeed VPORT
-        "VREF" -> Decode.succeed VREF
-        "WDT" -> Decode.succeed WDT
-        "UPDI" -> Decode.succeed UPDI
-        _ -> Decode.fail <| "Unsupported moduleValue: " ++ moduleValue
+    case fromString moduleValue of
+        Just moduleValue_ -> Decode.succeed moduleValue_
+        Nothing -> Decode.fail <| "Unsupported moduleValue: " ++ moduleValue
 
