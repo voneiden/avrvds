@@ -2,7 +2,14 @@ $pin-width: 22px;
 $pin-length: 25px;
 $label-border-radius: 6px;
 
+body {
+  background: black;
+  color: #eaeaea;
+  font-family: Monaco,"Bitstream Vera Sans Mono","Lucida Console",Terminal,monospace;
+}
+
 #chip-view {
+  color: black;
   .pin-label-wrapper {
     border-radius: $label-border-radius;
     border: 1px solid transparent;
@@ -184,3 +191,19 @@ $label-border-radius: 6px;
   }
 }
 
+
+code {
+  .keyword,
+  .c-type {
+    color: #cb7832;
+  }
+  .c-comment {
+    color: grey;
+  }
+  .register {
+    color: #e0c46c;
+  }
+  .constant {
+    color: #6896ba;
+  }
+}

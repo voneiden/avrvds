@@ -7,11 +7,14 @@ import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import CustomMarkdown exposing (defaultHtmlRenderer)
 import Data.Chip exposing (Bitfield, ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
+import Data.ChipCdef exposing (ChipCdef, chipCDEFDecoder)
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
+import Data.Tome exposing (Chapter, Section, SubSection, Tome, parseTome)
 import Data.Util.DeviceModuleCategory as DeviceModuleCategory
 import Data.Util.Module as Module
 import Data.Util.Pad as Pad
 --import Debug exposing (toString)
+import Debug exposing (toString)
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
@@ -22,10 +25,11 @@ import Json.Decode as Decoder
 import List exposing (concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
 import Markdown.Parser
 import Markdown.Renderer exposing (Renderer)
-import Maybe exposing (map2, withDefault)
-import String exposing (endsWith, fromInt, join, replace)
-import Tuple exposing (first, second)
+import Maybe exposing (withDefault)
+import Parser exposing (DeadEnd)
+import String exposing (fromInt, join, replace)
 import Url
+import Util.ParserUtil exposing (parserDeadEndsToString)
 
 
 
@@ -53,48 +57,38 @@ type alias Session =
 -- MODEL
 
 
-type alias State =
+type alias DefinitionState =
     { chipDefinition : ChipDefinition
     , variant : ChipVariant
     , device: ChipDevice
     , pinout : ChipPinout
-    , view : Int
-    , pin : Int
     , visibleModules : List DeviceModuleCategory
     , highlightModule : Maybe Module
     , selectedSignal : Maybe Signal
-    , hilightRelatedCategories : List DeviceModuleCategory
-    }
+    , highlightRelatedCategories : List DeviceModuleCategory
+    } -- TODO well CDEF can't go here can it now?
 
 
 type Model
-    = Failed Session Http.Error
-    | InvalidState Session
-    | Loading Session
-    | Success Session State
-    | Test1 Session
-    | Test2 Session (Maybe String)
+    = RequestFailed Session Http.Error
+    | ParsingTomeFailed Session (List DeadEnd)
+    | InsufficientData Session String
+    | Loading Session (Maybe DefinitionState) (Maybe ChipCdef) (Maybe Tome)
+    | Success Session DefinitionState ChipCdef Tome
 
 
 modelSession : Model -> Session
 modelSession model =
     case model of
-        Failed session _ ->
+        RequestFailed session _ ->
             session
-
-        Loading session ->
+        ParsingTomeFailed session _ ->
             session
-
-        Test1 session ->
+        InsufficientData session _ ->
             session
-
-        Test2 session _ ->
+        Loading session _ _ _ ->
             session
-
-        Success session _ ->
-            session
-
-        InvalidState session ->
+        Success session _ _ _ ->
             session
 
 
@@ -105,7 +99,7 @@ type alias Flags =
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     --(Loading, getDefinition)
-    ( Loading <| Session key flags.root, getDefinition flags.root "ATtiny814" )
+    ( Loading (Session key flags.root) Nothing Nothing Nothing, Cmd.batch [getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root] )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -117,12 +111,13 @@ onUrlChange : Url.Url -> Msg
 onUrlChange url =
     UrlChanged url
 
-
 type Msg
     = UrlRequested UrlRequest
     | UrlChanged Url.Url
-    | RequestDefinition String
+    | LoadDevice String
     | ReceiveDefinition (Result Http.Error ChipDefinition)
+    | ReceiveCDEF (Result Http.Error ChipCdef)
+    | ReceiveTome (Result Http.Error String)
     | ToggleVisibleCategory DeviceModuleCategory
     | HighlightModule Module
     | SelectSignal (Maybe Signal)
@@ -138,18 +133,38 @@ toggleVisible categories category =
         False ->
             categories ++ [ category ]
 
+modelCDEF : Model -> Maybe ChipCdef
+modelCDEF model =
+    case model of
+        Loading _ _ cdef _ ->
+            cdef
+        Success _ _ cdef _ ->
+            Just cdef
+        _ ->
+            Nothing
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+modelTome : Model -> Maybe Tome
+modelTome model =
+    case model of
+        Loading _ _ _ tome ->
+            tome
+        Success _ _ _ tome ->
+            Just tome
+        _ ->
+            Nothing
+
+-- For Msg's that are not model specific
+updateGeneric : Msg -> Model -> ( Model, Cmd Msg)
+updateGeneric msg model =
     let
-        session =
-            modelSession model
+        session = modelSession model
     in
     case msg of
         UrlRequested urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( Test2 session url.fragment, Nav.pushUrl session.key (Url.toString url) )
+                    --( Test2 session url.fragment, Nav.pushUrl session.key (Url.toString url) )
+                    (model, Nav.pushUrl session.key (Url.toString url) )
 
                 --(Test2 session url.fragment, Cmd.none)
                 Browser.External url ->
@@ -157,67 +172,105 @@ update msg model =
 
         UrlChanged url ->
             case model of
-                Test2 _ _ ->
-                    ( Test2 session (map2 (++) (Just "NAV!") url.fragment), Cmd.none )
-
+                --Test2 _ _ ->
+                --    ( Test2 session (map2 (++) (Just "NAV!") url.fragment), Cmd.none )
                 _ ->
                     ( model, Cmd.none )
 
-        RequestDefinition definitionId ->
-            ( Loading session, getDefinition session.root definitionId )
+        LoadDevice definitionId ->
+            let
+                cdef = modelCDEF model
+                tome = modelTome model
+            in
+            ( Loading session Nothing cdef tome, Cmd.batch [getDefinition session.root definitionId, getCDEF session.root definitionId] )
+        _ -> (model, Cmd.none)
 
-        ReceiveDefinition result ->
-            case result of
-                Ok chipDefinition ->
-                    let
-                        maybeVariant = get 0 chipDefinition.variants
-                        maybePinout = get 0 chipDefinition.pinouts
-                        maybeDevice = get 0 chipDefinition.devices
-                    in
-                        case maybeVariant of
-                            Nothing -> ( InvalidState session, Cmd.none )
-                            Just variant ->
-                                case maybePinout of
-                                    Nothing -> (InvalidState session, Cmd.none)
-                                    Just pinout ->
-                                        case maybeDevice of
-                                            Nothing -> (InvalidState session, Cmd.none)
-                                            Just device ->
-                                                ( Success session (State chipDefinition variant device pinout 0 0 [ IO, ANALOG, INTERFACE, TIMER, OTHER ] Nothing Nothing []), Cmd.none )
+jfold : Maybe a -> Maybe b -> Maybe b
+jfold a b =
+    case a of
+        Just _ -> b
+        Nothing -> Nothing
 
-                Err error ->
-                    ( Failed session error, Cmd.none )
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case model of
+        Loading session maybeDefinition maybeCdef maybeTome->
+            case msg of
+                ReceiveDefinition result ->
+                    case result of
+                        Ok chipDefinition ->
+                            let
+                                maybeVariant = get 0 chipDefinition.variants
+                                maybePinout = get 0 chipDefinition.pinouts
+                                maybeDevice = get 0 chipDefinition.devices
+                            in
+                                case maybeVariant of
+                                    Nothing -> ( InsufficientData session "Definition variants list is empty", Cmd.none )
+                                    Just variant ->
+                                        case maybePinout of
+                                            Nothing -> (InsufficientData session "Definition pinouts list is empty", Cmd.none)
+                                            Just pinout ->
+                                                case maybeDevice of
+                                                    Nothing -> (InsufficientData session "Definition devices list is empty", Cmd.none)
+                                                    Just device ->
+                                                        let
+                                                            definition = DefinitionState chipDefinition variant device pinout [ IO, ANALOG, INTERFACE, TIMER, OTHER ] Nothing Nothing []
+                                                        in
+                                                        case (maybeCdef, maybeTome) of
+                                                            (Just cdef, Just tome) ->
+                                                                ( Success session definition cdef tome, Cmd.none )
+                                                            _ ->
+                                                                ( Loading session (Just definition) maybeCdef maybeTome, Cmd.none )
+                        Err error ->
+                            ( RequestFailed session error, Cmd.none )
 
-        ToggleVisibleCategory category ->
-            case model of
-                Success _ state ->
-                    ( Success session { state | visibleModules = toggleVisible state.visibleModules category }, Cmd.none )
+                ReceiveCDEF result ->
+                    case result of
+                        Ok cdef ->
+                            case (maybeDefinition, maybeTome) of
+                                (Just definition, Just tome) ->
+                                    ( Success session definition cdef tome, Cmd.none )
+                                _ ->
+                                    ( Loading session maybeDefinition (Just cdef) maybeTome, Cmd.none )
+                        Err err ->
+                            ( RequestFailed session err, Cmd.none)
+                ReceiveTome result ->
+                    case result of
+                        Ok tomeString ->
+                            let
+                                tomeResult = parseTome tomeString
+                            in
+                            case tomeResult of
+                                Ok tome ->
+                                    case (maybeDefinition, maybeCdef) of
+                                        (Just definition, Just cdef) ->
+                                            ( Success session definition cdef tome, Cmd.none)
+                                        _ ->
+                                            ( Loading session maybeDefinition maybeCdef (Just tome), Cmd.none)
+                                Err err ->
+                                    ( ParsingTomeFailed session err, Cmd.none )
+                        Err err ->
+                            ( RequestFailed session err, Cmd.none)
+                _ ->
+                    updateGeneric msg model
+        Success session definition cdef tome ->
+            case msg of
+                ToggleVisibleCategory category ->
+                    ( Success session { definition | visibleModules = toggleVisible definition.visibleModules category } cdef tome, Cmd.none )
+
+                HighlightModule category ->
+                    ( Success session { definition | highlightModule = Just category } cdef tome, Cmd.none )
+
+                ClearHighlight ->
+                    ( Success session { definition | highlightModule = Nothing } cdef tome, Cmd.none )
+
+                SelectSignal pin ->
+                    ( Success session { definition | selectedSignal = pin } cdef tome, Cmd.none)
 
                 _ ->
-                    ( model, Cmd.none )
-
-        HighlightModule category ->
-            case model of
-                Success _ state ->
-                    ( Success session { state | highlightModule = Just category }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        ClearHighlight ->
-            case model of
-                Success _ state ->
-                    ( Success session { state | highlightModule = Nothing }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        SelectSignal pin ->
-            case model of
-                Success _ state ->
-                    ( Success session { state | selectedSignal = pin } , Cmd.none)
-                _ ->
-                    ( model, Cmd.none)
+                    updateGeneric msg model
+        _ ->
+            updateGeneric msg model
 
 -- SUBSCRIPTIONS
 
@@ -256,7 +309,7 @@ soicLeftPins pins =
     take (length pins // 2) pins
 
 
-getSignalsFromDevice : State -> ChipDevice -> List Signal
+getSignalsFromDevice : DefinitionState -> ChipDevice -> List Signal
 getSignalsFromDevice state device =
     map .instances (filter (\m -> member m.group state.visibleModules) device.modules)
         |> concat
@@ -268,27 +321,6 @@ getSignalsFromDevice state device =
 padSignals : Pad -> List Signal -> List Signal
 padSignals pad signals =
     filter (\p -> p.pad == pad) signals
-
-
-isAlternativeSignal : Signal -> Bool
-isAlternativeSignal signal =
-    endsWith "_ALT" signal.function
-
-
-signalModule : ChipDevice -> Signal -> Maybe Module
-signalModule device signal =
-    case filter (\d -> member signal (concat <| map (\i -> withDefault [] i.signals) d.instances)) device.modules of
-        [ m ] ->
-            Just m.name
-
-        _ ->
-            Nothing
-
-
-
--- |> filter (\i -> member signal i.signals)
---let
---    modules = filter (\d -> d.instances) device.modules
 
 
 type alias SignalFit =
@@ -418,7 +450,7 @@ signalToString signal =
             replace "_" "-" result
 
 
-highlightSignal : State -> Signal -> Bool
+highlightSignal : DefinitionState -> Signal -> Bool
 highlightSignal state signal =
     case state.highlightModule of
         Just c ->
@@ -433,7 +465,7 @@ highlightSignalClass highlight =
         True -> Just "highlight"
         False -> Nothing
 
-selectSignalClass : State -> Signal -> Maybe String
+selectSignalClass : DefinitionState -> Signal -> Maybe String
 selectSignalClass state signal =
     case state.selectedSignal of
         Just selectedSignal ->
@@ -447,7 +479,7 @@ selectSignalClass state signal =
         Nothing -> Nothing
 
 
-viewPinSignal : State -> Signal -> Html Msg
+viewPinSignal : DefinitionState -> Signal -> Html Msg
 viewPinSignal state signal =
     div
         [ class <| cls
@@ -468,7 +500,7 @@ viewPinSignal state signal =
         ]
 
 
-viewPin : State -> List Signal -> ChipPin -> Html Msg
+viewPin : DefinitionState -> List Signal -> ChipPin -> Html Msg
 viewPin state signals pin =
     let
         nonport =
@@ -485,18 +517,12 @@ viewPin state signals pin =
             map (viewPinSignal state) (padSignals pin.pad signals)
 
 
-cls2 : List ( Bool, String ) -> String
-cls2 pairs =
-    filter first pairs
-        |> map second
-        |> join " "
-
 cls : List (Maybe String) -> String
 cls xs =
     filterMap identity xs
         |> join " "
 
-viewModuleSelectCheckbox : State -> DeviceModuleCategory -> Html Msg
+viewModuleSelectCheckbox : DefinitionState -> DeviceModuleCategory -> Html Msg
 viewModuleSelectCheckbox state category =
     div []
         [ input
@@ -509,13 +535,13 @@ viewModuleSelectCheckbox state category =
         ]
 
 
-viewModuleSelect : State -> Html Msg
+viewModuleSelect : DefinitionState -> Html Msg
 viewModuleSelect state =
     div [ class "module-select" ] <| map (viewModuleSelectCheckbox state) DeviceModuleCategory.list
 
 
-viewChip : State -> List Signal -> Html Msg
-viewChip state signals =
+viewChip : DefinitionState -> ChipCdef -> List Signal -> Html Msg
+viewChip state cdef signals =
     let
         leftPins =
             soicLeftPins state.pinout.pins
@@ -553,13 +579,13 @@ viewBitfield : Bitfield -> Html Msg
 viewBitfield bitfield =
     div [] <| [h4 [] [text bitfield.caption]]
     ++
-    render defaultHtmlRenderer (Maybe.withDefault "" bitfield.description)
+    render (defaultHtmlRenderer Nothing) (Maybe.withDefault "" bitfield.description)
 
 viewRegister : Register -> Html Msg
 viewRegister register =
     div [] <|
         [ h3 [] [text register.name]]
-        ++ render defaultHtmlRenderer (Maybe.withDefault "" register.description)
+        ++ render (defaultHtmlRenderer Nothing) (Maybe.withDefault "" register.description)
         ++ case register.bitfields of
             Nothing ->
                 [text "No bitfields"]
@@ -582,8 +608,8 @@ viewRegisterGroup caption registerGroup =
 -- note on signal logic
 -- group by "function"
 -- name by "group" + index (if contains more than 1!)
-viewModule : State -> Html Msg
-viewModule state =
+viewModule : DefinitionState -> ChipCdef -> Html Msg
+viewModule state cdef =
     case state.selectedSignal of
         Nothing ->
             text ""
@@ -612,19 +638,19 @@ viewModule state =
                 [] ->
                     div [] [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
 
-viewChipSelect : State -> Html Msg
+viewChipSelect : DefinitionState -> Html Msg
 viewChipSelect state =
     div []
-        [ a [href "#", onClick <| RequestDefinition "ATtiny202"] [ text "ATtiny202" ]
+        [ a [href "#", onClick <| LoadDevice "ATtiny202"] [ text "ATtiny202" ]
         , text " | "
-        , a [href "#", onClick <| RequestDefinition "ATtiny814"] [ text "ATtiny814" ]
+        , a [href "#", onClick <| LoadDevice "ATtiny814"] [ text "ATtiny814" ]
         ]
 
-test =
-    let
-        foo = defaultHtmlRenderer
-    in
-    0
+debugR : Result String (List (Html Msg)) -> List (Html Msg)
+debugR r =
+    case r of
+        Ok x -> x
+        Err err -> [div [] [text err]]
 
 render : Renderer (Html Msg) -> String -> List (Html Msg)
 render renderer markdown =
@@ -632,34 +658,62 @@ render renderer markdown =
         |> Markdown.Parser.parse
         |> Result.mapError deadEndsToString
         |> Result.andThen (\ast -> Markdown.Renderer.render renderer ast)
-        |> Result.withDefault [text "Markdown render failed"]
+        |> debugR
+        --|> Result.withDefault [text "Markdown render failed"]
+
 
 deadEndsToString deadEnds =
     deadEnds
         |> List.map Markdown.Parser.deadEndToString
         |> String.join "\n"
 
+viewSubSection : DefinitionState -> ChipCdef -> SubSection -> Html Msg
+viewSubSection state cdef subSection =
+    div [] <|
+        [ h3 [] [text subSection.title]]
+        ++
+        render (defaultHtmlRenderer (Just cdef)) subSection.body
+
+viewSection : DefinitionState -> ChipCdef -> Section -> Html Msg
+viewSection state cdef section =
+    div [] <|
+        [ h2 [] [text section.title]]
+        ++
+        render (defaultHtmlRenderer (Just cdef)) section.body
+        ++
+        List.map (viewSubSection state cdef) section.subSections
+
+viewChapter : DefinitionState -> ChipCdef -> Chapter -> Html Msg
+viewChapter state cdef chapter =
+    -- TODO some kind of logic to determine what topic we want to show
+    div [] <| List.map (viewSection state cdef) chapter.sections
+        ++ [div [] [text <| toString chapter]]
+
+viewTome : DefinitionState -> ChipCdef -> Tome -> Html Msg
+viewTome state cdef tome =
+    let
+        maybeAlias = Dict.get state.device.name tome.aliases
+    in
+    case maybeAlias of
+        Just alias ->
+            let
+                chapter = List.filter (\c -> c.title == alias) tome.chapters
+            in
+            case chapter of
+                [c] ->
+                    viewChapter state cdef c
+                _ ->
+                    div [] [text "Selected device has invalid documentation alias"]
+        Nothing ->
+            div [] [text "Selected device has no extra documentation."]
+
 
 viewGif : Model -> Html Msg
 viewGif model =
     case model of
-        Test1 _ ->
+        RequestFailed _ error ->
             div []
-                [ text "Initial state"
-                , a [ href "#fok" ] [ text "link" ]
-                ]
-
-        Test2 _ maybeHash ->
-            case maybeHash of
-                Just hash ->
-                    div [] [ text "Navigated to", text hash ]
-
-                Nothing ->
-                    div [] [ text "Navigated to no hash" ]
-
-        Failed _ error ->
-            div []
-                [ text "I could not load a random cat for some reason:",
+                [ text "Unable to load device definition: ",
                 case error of
                     BadBody message ->
                         text <| "Decoding error:" ++ message
@@ -675,23 +729,28 @@ viewGif model =
 
                     BadStatus statusCode ->
                         text <| "Bad status response:" ++ fromInt statusCode
-                , button [ onClick <| RequestDefinition "ATtiny202" ] [ text "Try Again!" ]
+                , button [ onClick <| LoadDevice "ATtiny202" ] [ text "Try Again!" ]
                 ]
-
-        Loading _ ->
+        ParsingTomeFailed _ error ->
+            div [] <| [ text ("Parsing Tome failed: " ++ (parserDeadEndsToString error))]
+        InsufficientData _ reason ->
+            div [] [ text "Received device definition is invalid: "
+                   , text reason
+                   ]
+        Loading _ _ _ _ ->
             text "Loading..."
 
-        Success _ state ->
+        Success _ state cdef tome ->
             div []
                 [ div []
                     [ viewChipSelect state
-                    , viewChip state  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
-                    , viewModule state
-                    -- viewChip pinout (getSignalsFromDevice device))
+                    , viewChip state cdef  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
+                    , viewModule state cdef
+                    , viewTome state cdef tome
                     ]
                 ]
-        InvalidState _ ->
-            div [] [text "Woopsie doopsie, invalid state"]
+
+
 
 
 getDefinition : String -> String -> Cmd Msg
@@ -699,4 +758,19 @@ getDefinition root definitionId =
     Http.get
         { url = root ++ "data/" ++ definitionId ++ ".json"
         , expect = Http.expectJson ReceiveDefinition chipDefinitionDecoder
+        }
+
+
+getCDEF : String -> String -> Cmd Msg
+getCDEF root definitionId =
+    Http.get
+        { url = root ++ "data/" ++ definitionId ++ "_cdef.json"
+        , expect = Http.expectJson ReceiveCDEF chipCDEFDecoder
+        }
+
+getTome : String  -> Cmd Msg
+getTome root =
+    Http.get
+        { url = root ++ "data/tome.md"
+        , expect = Http.expectString ReceiveTome
         }
