@@ -20,6 +20,7 @@ import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
+import Html.Lazy exposing (lazy, lazy2)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
 import List exposing (concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
@@ -667,26 +668,28 @@ deadEndsToString deadEnds =
         |> List.map Markdown.Parser.deadEndToString
         |> String.join "\n"
 
-viewSubSection : DefinitionState -> ChipCdef -> SubSection -> Html Msg
-viewSubSection state cdef subSection =
+-- TODO CHECK OUT https://package.elm-lang.org/packages/lazamar/dict-parser/latest/Parser-Dict for faster code parsing
+
+viewSubSection : ChipCdef -> SubSection -> Html Msg
+viewSubSection cdef subSection =
     div [] <|
         [ h3 [] [text subSection.title]]
         ++
         render (defaultHtmlRenderer (Just cdef)) subSection.body
 
-viewSection : DefinitionState -> ChipCdef -> Section -> Html Msg
-viewSection state cdef section =
+viewSection : ChipCdef -> Section -> Html Msg
+viewSection cdef section =
     div [] <|
         [ h2 [] [text section.title]]
         ++
         render (defaultHtmlRenderer (Just cdef)) section.body
         ++
-        List.map (viewSubSection state cdef) section.subSections
+        List.map (viewSubSection cdef) section.subSections
 
-viewChapter : DefinitionState -> ChipCdef -> Chapter -> Html Msg
-viewChapter state cdef chapter =
+viewChapter : ChipCdef -> Chapter -> Html Msg
+viewChapter cdef chapter =
     -- TODO some kind of logic to determine what topic we want to show
-    div [] <| List.map (viewSection state cdef) chapter.sections
+    div [] <| List.map (viewSection cdef) chapter.sections
         ++ [div [] [text <| toString chapter]]
 
 viewTome : DefinitionState -> ChipCdef -> Tome -> Html Msg
@@ -701,7 +704,7 @@ viewTome state cdef tome =
             in
             case chapter of
                 [c] ->
-                    viewChapter state cdef c
+                    lazy2 viewChapter cdef c
                 _ ->
                     div [] [text "Selected device has invalid documentation alias"]
         Nothing ->
