@@ -1,11 +1,11 @@
 module CustomMarkdown exposing (defaultHtmlRenderer)
-import Data.ChipCdef exposing (ChipCdef)
+import Data.ChipCdef exposing (ChipCdef, ConstantCdef(..), RegisterCdef(..))
 import Html exposing (Html)
 import Html.Attributes as Attr exposing (href)
 import Markdown.Block as Block exposing (Block)
 import Markdown.Html
 import Markdown.Renderer exposing (Renderer)
-import Parser exposing ((|.), (|=), Nestable(..), Parser, Step(..), chompIf, chompUntil, chompWhile, end, getChompedString, int, keyword, lineComment, loop, map, multiComment, oneOf, run, spaces, succeed, symbol)
+import Parser exposing ((|.), (|=), Nestable(..), Parser, Step(..), chompIf, chompWhile, getChompedString, keyword, lineComment, loop, map, multiComment, oneOf, run, succeed, symbol)
 import String exposing (fromChar)
 
 type Code =
@@ -167,9 +167,10 @@ codeParserHelp2 cdef revBlocks =
         , oneOf (List.map keyword cdef.registers)
             |> getChompedString
             |> map (\s -> Loop (Register s :: revBlocks))
-        , oneOf (List.map keyword (List.map (\x -> Tuple.first x) cdef.constants))
-            |> getChompedString
-            |> map (\s -> Loop (Constant s (constantHelpText s cdef) :: revBlocks))
+        , succeed  (\(RegisterCdef constant) -> Loop (Register constant :: revBlocks))
+            |= cdef.registerParser
+        , succeed  (\(ConstantCdef constant helpText) -> Loop (Constant constant helpText :: revBlocks))
+            |= cdef.constantParser
         , lineComment "//"
             |. newlines
             |> getChompedString

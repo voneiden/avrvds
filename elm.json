@@ -16,6 +16,7 @@
             "elm/parser": "1.1.0",
             "elm/url": "1.0.0",
             "elm-community/dict-extra": "2.4.0",
+            "lazamar/dict-parser": "1.0.2",
             "ymtszw/elm-xml-decode": "3.2.1"
         },
         "indirect": {
