@@ -7,8 +7,16 @@ body {
   color: #eaeaea;
   font-family: Monaco,"Bitstream Vera Sans Mono","Lucida Console",Terminal,monospace;
 }
-
+#chip-container {
+  display: flex;
+  flex-direction: row;
+  #module-select {
+    position: absolute;
+  }
+}
 #chip-view {
+  flex-grow: 1;
+  justify-content: center;
   color: black;
   .pin-label-wrapper {
     border-radius: $label-border-radius;
@@ -32,6 +40,9 @@ body {
       flex-direction: column;
     }
     .soic-right {
+      flex-basis: 1px;
+      flex-grow: 1;
+
       .pin {
         .pin-leg {
           border-bottom-right-radius: 5px;
@@ -66,6 +77,8 @@ body {
       }
     }
     .soic-left {
+      flex-basis: 1px;
+      flex-grow: 1;
       .pin {
         flex-direction: row-reverse;
         .pin-leg {
@@ -205,5 +218,24 @@ code {
   }
   .constant {
     color: #6896ba;
+  }
+}
+
+
+#info-row {
+  display: flex;
+  flex-direction: row;
+  border-top: 1px solid lime;
+  margin-top: 10px;
+  #module-info {
+    flex-basis: 100px;
+    flex-grow: 1;
+    padding-right: 4px;
+    border-right: 1px solid lime;
+  }
+  #tome {
+    flex-basis: 100px;
+    flex-grow: 1;
+    padding-left: 5px;
   }
 }

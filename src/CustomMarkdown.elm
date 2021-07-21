@@ -1,7 +1,7 @@
 module CustomMarkdown exposing (defaultHtmlRenderer)
 import Data.ChipCdef exposing (ChipCdef)
 import Html exposing (Html)
-import Html.Attributes as Attr
+import Html.Attributes as Attr exposing (href)
 import Markdown.Block as Block exposing (Block)
 import Markdown.Html
 import Markdown.Renderer exposing (Renderer)
@@ -147,6 +147,12 @@ constantHelpText constantName cdef =
     case List.filter (\x -> Tuple.first x == constantName) cdef.constants of
         [constant] -> Tuple.second constant
         _ -> ""
+
+
+refElement : String -> List (Html a) -> Html a
+refElement page _ =
+    Html.span [] [Html.sup [] [Html.a [href "#"] [Html.text <| "[D]"]]]
+
 
 
 codeParserHelp2 : ChipCdef -> List (Code) -> Parser (Step (List (Code)) (List (Code)))
@@ -338,7 +344,9 @@ defaultHtmlRenderer maybeCdef =
     , html = Markdown.Html.oneOf
         [ Markdown.Html.tag "topic" (\children -> Html.div [] children)
         , Markdown.Html.tag "reg" (\children -> Html.div [] children)
-        , Markdown.Html.tag "ref" (\children -> Html.div [] children)
+        , Markdown.Html.tag "ref" refElement
+            |> Markdown.Html.withAttribute "page"
+
         ]
     , codeBlock =
         \{ body, language } ->

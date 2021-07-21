@@ -114,30 +114,31 @@ betterParser =
                 , succeed (\subSectionName -> subSectionName)
                     |. symbol "###"
                     |= (getChompedString <| chompUntilEndOr "\n")
-                    |. chompWhile (\c -> c == '\n')
+                    |. chompWhile ((==) '\n')
                     |> andThen (addSubSection tome)
                 , succeed (\sectionName -> sectionName)
                     |. symbol "##"
                     |= (getChompedString <| chompUntilEndOr "\n")
-                    |. chompWhile (\c -> c == '\n')
+                    |. chompWhile ((==) '\n')
                     |> andThen (addSection tome)
                 , succeed (\chapterName aliasName -> (String.trim (chapterName), aliasName))
                     |. symbol "#"
                     |= (getChompedString <| succeed () |. chompWhile (\c -> c /= '\n' && c /= '-'))
                     |= oneOf
-                        [ succeed (\x -> Just (String.trim x))
+                        --[ succeed (\x -> Just (String.trim x))
+                        [ succeed (String.trim >> Just)
                             |. symbol "->"
                             |= (getChompedString <| succeed () |. chompWhile(\c -> c /= '\n'))
-                            |. chompIf (\c -> c == '\n')
+                            |. chompIf ((==) '\n')
                         , succeed (\_ -> Nothing)
-                            |= chompIf (\c -> c == '\n')
+                            |= chompIf ((==) '\n')
                         ]
                     |> andThen (addChapter tome)
                 , end
                     |> map (\_ -> Done tome)
                 , succeed ()
                     |. chompUntilEndOr "\n"
-                    |. chompWhile (\c -> c == '\n')
+                    |. chompWhile ((==) '\n')
                     |> getChompedString
                     |> andThen (addText tome)
                 ]

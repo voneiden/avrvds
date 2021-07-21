@@ -290,7 +290,7 @@ view model =
     { title = "AVR Visual Datasheet"
     , body =
         [ div []
-            [ viewGif model
+            [ viewModel model
             ]
         ]
     }
@@ -538,7 +538,7 @@ viewModuleSelectCheckbox state category =
 
 viewModuleSelect : DefinitionState -> Html Msg
 viewModuleSelect state =
-    div [ class "module-select" ] <| map (viewModuleSelectCheckbox state) DeviceModuleCategory.list
+    div [ id "module-select" ] <| map (viewModuleSelectCheckbox state) DeviceModuleCategory.list
 
 
 viewChip : DefinitionState -> ChipCdef -> List Signal -> Html Msg
@@ -611,16 +611,16 @@ viewRegisterGroup caption registerGroup =
 -- name by "group" + index (if contains more than 1!)
 viewModule : DefinitionState -> ChipCdef -> Html Msg
 viewModule state cdef =
-    case state.selectedSignal of
-        Nothing ->
-            text ""
-        Just signal ->
-            let
-                chipModules = filter (\m -> m.name == signal.deviceModule) state.chipDefinition.modules
-            in
-            case chipModules of
-                chipModule::_ ->
-                    div [] <|
+    div [id "module-info"] <|
+        case state.selectedSignal of
+            Nothing ->
+                [h2 [] [text "Module information - no module selected"]]
+            Just signal ->
+                let
+                    chipModules = filter (\m -> m.name == signal.deviceModule) state.chipDefinition.modules
+                in
+                case chipModules of
+                    chipModule::_ ->
                          [h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
                          ++
                          case chipModule.registerGroups of
@@ -632,12 +632,12 @@ viewModule state cdef =
 
                                              _ -> True
                                  in
-                                 map (viewRegisterGroup captionGroup) registerGroups
+                                 map (lazy2 viewRegisterGroup captionGroup) registerGroups
                              Nothing ->
                                  [ text "No registers"]
 
-                [] ->
-                    div [] [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
+                    [] ->
+                        [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
 
 viewChipSelect : DefinitionState -> Html Msg
 viewChipSelect state =
@@ -702,17 +702,18 @@ viewTome state cdef tome =
             let
                 chapter = List.filter (\c -> c.title == alias) tome.chapters
             in
-            case chapter of
-                [c] ->
-                    lazy2 viewChapter cdef c
-                _ ->
-                    div [] [text "Selected device has invalid documentation alias"]
+            div [id "tome"] <|
+                case chapter of
+                    [c] ->
+                        [lazy2 viewChapter cdef c]
+                    _ ->
+                        [text "Selected device has invalid documentation alias"]
         Nothing ->
             div [] [text "Selected device has no extra documentation."]
 
 
-viewGif : Model -> Html Msg
-viewGif model =
+viewModel : Model -> Html Msg
+viewModel model =
     case model of
         RequestFailed _ error ->
             div []
@@ -748,8 +749,10 @@ viewGif model =
                 [ div []
                     [ viewChipSelect state
                     , viewChip state cdef  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
-                    , viewModule state cdef
-                    , viewTome state cdef tome
+                    , div [id "info-row"]
+                         [ viewModule state cdef
+                         , viewTome state cdef tome
+                         ]
                     ]
                 ]
 
