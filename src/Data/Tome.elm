@@ -1,9 +1,10 @@
 module Data.Tome exposing (..)
 
 import Dict exposing (Dict)
-import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompWhile, end, getChompedString, keyword, loop, map, oneOf, problem, run, spaces, succeed, symbol)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompWhile, commit, end, getChompedString, keyword, loop, map, oneOf, problem, run, spaces, succeed, symbol)
 import Parser.Advanced exposing (chompUntilEndOr)
 import Parser.Advanced as A exposing ((|=), (|.))
+import Url exposing (Url)
 
 type alias SubSection =
     { title : String
@@ -16,8 +17,15 @@ type alias Section =
     , subSections: List SubSection
     }
 
+type alias Document =
+    { name : String
+    , url : Url
+    }
+
+-- Chapter describes a single device
 type alias Chapter =
     { title : String
+    , documents: List Document
     , body: String
     , sections: List Section
     }
@@ -36,12 +44,63 @@ stringTrim = map (\s -> String.trim s)
 
 addChapter : Tome -> (String, Maybe String) -> Parser (Step Tome Tome)
 addChapter tome (chapterTitle, aliasName) =
+    -- TODO validate documents (|> andThen validateTome)
     case aliasName of
         Just alias ->
             succeed <| Loop { tome | aliases = Dict.update chapterTitle (\_ -> Just alias) tome.aliases}
         Nothing ->
-            succeed <| Loop {tome | chapters = Chapter (String.trim chapterTitle) "" [] :: List.reverse tome.chapters,
-                                    aliases = Dict.update chapterTitle (\_ -> Just chapterTitle) tome.aliases}
+            -- Previous chapter should have
+            succeed (Loop {tome | chapters = Chapter (String.trim chapterTitle) [] "" [] :: List.reverse tome.chapters,
+                                    aliases = Dict.update chapterTitle (\_ -> Just chapterTitle) tome.aliases})
+                |. validateLastChapter tome
+
+validateLastChapter : Tome -> Parser ()
+validateLastChapter tome =
+    case List.reverse tome.chapters of
+        chapter :: _ ->
+            case List.filter (\d -> d.name == "Datasheet") chapter.documents of
+                [_] -> succeed ()
+                _ -> problem <| "Chapter \"" ++ chapter.title ++ "\" has no datasheet defined"
+        _ ->
+            succeed ()
+
+
+validateTome : Tome -> Parser Tome
+validateTome tome =
+    let
+        fold : Chapter -> Maybe String -> Maybe String
+        fold chapter problemMsg =
+            case problemMsg of
+                Nothing ->
+                    case List.filter (\d -> d.name == "Datasheet") chapter.documents of
+                        [_] -> Nothing
+                        _ -> Just <| "Chapter \"" ++ chapter.title ++ "\" has no datasheet defined"
+                _ -> problemMsg
+    in
+    case List.foldl fold Nothing tome.chapters of
+        Nothing -> succeed tome
+        Just problemMsg -> problem problemMsg
+
+
+
+type alias DocumentDefinition =
+    { name: String
+    , rawUrl: String
+    }
+
+addDocument : Tome -> DocumentDefinition -> Parser (Step Tome Tome)
+addDocument tome documentDefinition =
+    case Url.fromString documentDefinition.rawUrl of
+            Just url ->
+                case List.reverse tome.chapters of
+                    chapter :: otherChapters ->
+                        succeed <| Loop { tome | chapters = List.reverse <| {chapter | documents = chapter.documents ++ [Document documentDefinition.name url]} :: otherChapters }
+                    _ ->
+                        problem "Expected to see a chapter (#) before document"
+            Nothing ->
+                problem "Document does not contain a valid url"
+
+
 
 addSection : Tome -> String -> Parser (Step Tome Tome)
 addSection tome sectionTitle =
@@ -97,6 +156,8 @@ parseStringUntilEnd : Parser String
 parseStringUntilEnd =
     map String.trim <| getChompedString <| chompUntilEndOr "\n"
 
+
+
 betterParser : Parser (Tome)
 betterParser =
     let
@@ -111,6 +172,15 @@ betterParser =
                     |. chompUntilEndOr "\n"
                     |> getChompedString
                     |> andThen (addText tome)
+                , succeed DocumentDefinition
+                    |. symbol "* Document ["
+                    |= (getChompedString <| chompUntil "]")
+                    |. symbol "]("
+                    |= (getChompedString <| chompUntil ")")
+                    |. symbol ")"
+                    |. chompWhile ((==) '\n')
+                    |> andThen (addDocument tome)
+                    --|> andThen (addDocument tome) -- TODO UH OH
                 , succeed (\subSectionName -> subSectionName)
                     |. symbol "###"
                     |= (getChompedString <| chompUntilEndOr "\n")
@@ -135,6 +205,8 @@ betterParser =
                         ]
                     |> andThen (addChapter tome)
                 , end
+                    |. commit ()
+                    |. validateLastChapter tome
                     |> map (\_ -> Done tome)
                 , succeed ()
                     |. chompUntilEndOr "\n"

@@ -225,13 +225,13 @@ code {
 #info-row {
   display: flex;
   flex-direction: row;
-  border-top: 1px solid lime;
+  border-top: 1px solid #b5e853;
   margin-top: 10px;
   #module-info {
     flex-basis: 100px;
     flex-grow: 1;
     padding-right: 4px;
-    border-right: 1px solid lime;
+    border-right: 1px solid #b5e853;
   }
   #tome {
     flex-basis: 100px;
