@@ -1,7 +1,5 @@
 module Main exposing (..)
 
---import Html.Attributes exposing (..)
-
 import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
@@ -9,12 +7,10 @@ import CustomMarkdown exposing (defaultHtmlRenderer)
 import Data.Chip exposing (Bitfield, ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
 import Data.ChipCdef exposing (ChipCdef, chipCDEFDecoder)
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
-import Data.Tome exposing (Chapter, Section, SubSection, Tome, parseTome)
+import Data.Tome as Tome exposing (Chapter, Section, SubSection, Tome, parseTome)
 import Data.Util.DeviceModuleCategory as DeviceModuleCategory
 import Data.Util.Module as Module
 import Data.Util.Pad as Pad
---import Debug exposing (toString)
-import Debug exposing (toString)
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
@@ -578,15 +574,15 @@ viewChip state cdef signals =
 
 viewBitfield : Bitfield -> Html Msg
 viewBitfield bitfield =
-    div [] <| [h4 [] [text bitfield.caption]]
+    div [ class "bitfield" ] <| [h4 [] [text bitfield.caption]]
     ++
-    render (defaultHtmlRenderer Nothing) (Maybe.withDefault "" bitfield.description)
+    render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" bitfield.description)
 
 viewRegister : Register -> Html Msg
 viewRegister register =
-    div [] <|
+    div [ class "register" ] <|
         [ h3 [] [text register.name]]
-        ++ render (defaultHtmlRenderer Nothing) (Maybe.withDefault "" register.description)
+        ++ render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" register.description)
         ++ case register.bitfields of
             Nothing ->
                 [text "No bitfields"]
@@ -602,9 +598,9 @@ viewRegisterGroup caption registerGroup =
     in
     case caption of
         True ->
-            div [] <| [ div [] [ text registerGroup.caption]] ++ registers
+            div [ class "register-group"] <| [ div [] [ text registerGroup.caption]] ++ registers
         False ->
-            div [] <| registers
+            div [ class "register-group"] <| registers
 
 -- note on signal logic
 -- group by "function"
@@ -670,27 +666,26 @@ deadEndsToString deadEnds =
 
 -- TODO CHECK OUT https://package.elm-lang.org/packages/lazamar/dict-parser/latest/Parser-Dict for faster code parsing
 
-viewSubSection : ChipCdef -> SubSection -> Html Msg
-viewSubSection cdef subSection =
-    div [] <|
+viewSubSection : List Tome.Document -> ChipCdef -> SubSection -> Html Msg
+viewSubSection documents cdef subSection =
+    div [ class "subsection"] <|
         [ h3 [] [text subSection.title]]
         ++
-        render (defaultHtmlRenderer (Just cdef)) subSection.body
+        render (defaultHtmlRenderer (Just cdef) (Just documents)) subSection.body
 
-viewSection : ChipCdef -> Section -> Html Msg
-viewSection cdef section =
-    div [] <|
+viewSection : List Tome.Document -> ChipCdef -> Section -> Html Msg
+viewSection documents cdef section =
+    div [ class "section"] <|
         [ h2 [] [text section.title]]
         ++
-        render (defaultHtmlRenderer (Just cdef)) section.body
+        render (defaultHtmlRenderer (Just cdef) (Just documents)) section.body
         ++
-        List.map (viewSubSection cdef) section.subSections
+        List.map (viewSubSection documents cdef) section.subSections
 
 viewChapter : ChipCdef -> Chapter -> Html Msg
 viewChapter cdef chapter =
     -- TODO some kind of logic to determine what topic we want to show
-    div [] <| List.map (viewSection cdef) chapter.sections
-        ++ [div [] [text <| toString chapter]]
+    div [] <| List.map (viewSection chapter.documents cdef) chapter.sections
 
 viewTome : DefinitionState -> ChipCdef -> Tome -> Html Msg
 viewTome state cdef tome =

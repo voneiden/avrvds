@@ -1,7 +1,7 @@
 module Data.Tome exposing (..)
 
 import Dict exposing (Dict)
-import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompWhile, commit, end, getChompedString, keyword, loop, map, oneOf, problem, run, spaces, succeed, symbol)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), andThen, chompIf, chompUntil, chompWhile, commit, end, getChompedString, loop, map, oneOf, problem, run, succeed, symbol)
 import Parser.Advanced exposing (chompUntilEndOr)
 import Parser.Advanced as A exposing ((|=), (|.))
 import Url exposing (Url)
@@ -51,7 +51,7 @@ addChapter tome (chapterTitle, aliasName) =
         Nothing ->
             -- Previous chapter should have
             succeed (Loop {tome | chapters = Chapter (String.trim chapterTitle) [] "" [] :: List.reverse tome.chapters,
-                                    aliases = Dict.update chapterTitle (\_ -> Just chapterTitle) tome.aliases})
+                                  aliases = Dict.update chapterTitle (\_ -> Just chapterTitle) tome.aliases})
                 |. validateLastChapter tome
 
 validateLastChapter : Tome -> Parser ()

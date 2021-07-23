@@ -1,5 +1,6 @@
 module CustomMarkdown exposing (defaultHtmlRenderer)
 import Data.ChipCdef exposing (ChipCdef, ConstantCdef(..), RegisterCdef(..))
+import Data.Tome exposing (Document)
 import Html exposing (Html)
 import Html.Attributes as Attr exposing (href)
 import Markdown.Block as Block exposing (Block)
@@ -7,6 +8,8 @@ import Markdown.Html
 import Markdown.Renderer exposing (Renderer)
 import Parser exposing ((|.), (|=), Nestable(..), Parser, Step(..), chompIf, chompWhile, getChompedString, keyword, lineComment, loop, map, multiComment, oneOf, run, succeed, symbol)
 import String exposing (fromChar)
+import Url
+import Util exposing (findOne)
 
 type Code =
     Keyword String | CType String | Constant String String | Register String | Plain String | Number String | StringLiteral String | Comment String | Fail
@@ -149,9 +152,18 @@ constantHelpText constantName cdef =
         _ -> ""
 
 
-refElement : String -> List (Html a) -> Html a
-refElement page _ =
-    Html.span [] [Html.sup [] [Html.a [href "#"] [Html.text <| "[D]"]]]
+refElement : Maybe (List Document) -> String -> List (Html a) -> Html a
+refElement maybeDocuments page _ =
+    case maybeDocuments of
+        Just documents ->
+            case findOne (\d -> d.name == "Datasheet") documents of
+                Just document ->
+                    Html.span [] [Html.sup [] [Html.a [href <| (Url.toString document.url) ++ "#page=" ++ page] [Html.text <| "[D]"]]]
+                Nothing ->
+                    Html.span [] [Html.sup [] [Html.text "[Datasheet missing]"]]
+        Nothing ->
+            Html.span [] [Html.sup [] [Html.text "[Documents missing]"]]
+
 
 
 
@@ -224,8 +236,8 @@ codeParserHelp revBlocks =
     --         |= map (\s -> Plain s) anyToken
 
     ]
-defaultHtmlRenderer : Maybe ChipCdef -> Renderer (Html msg)
-defaultHtmlRenderer maybeCdef =
+defaultHtmlRenderer : Maybe ChipCdef -> Maybe (List Document) -> Renderer (Html msg)
+defaultHtmlRenderer maybeCdef maybeDocuments=
     { heading =
         \{ level, children } ->
             case level of
@@ -343,9 +355,9 @@ defaultHtmlRenderer maybeCdef =
                         )
                 )
     , html = Markdown.Html.oneOf
-        [ Markdown.Html.tag "topic" (\children -> Html.div [] children)
-        , Markdown.Html.tag "reg" (\children -> Html.div [] children)
-        , Markdown.Html.tag "ref" refElement
+        [ Markdown.Html.tag "topic" (\children -> Html.div [] [Html.text "[TODO topic link]"])
+        , Markdown.Html.tag "reg" (\children -> Html.div [] [Html.text "[TODO register element]"])
+        , Markdown.Html.tag "ref" (refElement maybeDocuments)
             |> Markdown.Html.withAttribute "page"
 
         ]

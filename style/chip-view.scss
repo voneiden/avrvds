@@ -221,17 +221,42 @@ code {
   }
 }
 
+h3, h4 {
+  color: #b5e853;
+}
 
 #info-row {
   display: flex;
   flex-direction: row;
   border-top: 1px solid #b5e853;
   margin-top: 10px;
+
+  table {
+    border: 1px solid #b5e853;
+    border-collapse: collapse;
+    td {
+      border: 1px solid #b5e853;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+    th {
+      color: black;
+      background-color: #b5e853;
+      border: 1px solid black;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+  }
+
   #module-info {
     flex-basis: 100px;
     flex-grow: 1;
     padding-right: 4px;
     border-right: 1px solid #b5e853;
+
+    .bitfield {
+      padding-left: 20px;
+    }
   }
   #tome {
     flex-basis: 100px;
