@@ -1,10 +1,18 @@
 # ATtiny814
+
+* Document [Datasheet](https://ww1.microchip.com/downloads/en/DeviceDoc/ATtiny417-814-816-817-DataSheet-DS40002288A.pdf)
+
 ## Overview
 ## Topic Clock Rate
 
-The ATtiny boots up with the 16/20 MHz oscillator (OSC20M) running at 20 MHz as the clock source and a prescaler division factor of 6 giving a frequency of at 3.333 MHz <ref>74</ref>.
-The clock source and clock prescaler can be configured by temporarily disabling I/O register Configuration Change Protection (CCP). This is done by setting 0xD8 as the value of <reg>CPU.CCP.CCP</reg> register, followed by setting the desired values to <reg>CLKCTRL.MCLKCTRLA.CLKSEL</reg> and <reg>CLKCTRL.MCLKCTRLB.PDIV</reg> registers.
-<topic>Fuses</topic> define whether OSC20M runs at 16 or 20 MHz: <reg>FUSE.OSCCFG.FREQSEL</reg>.
+The ATtiny boots up with the 16/20 MHz oscillator (OSC20M) running at 20 MHz as the clock source and a 
+prescaler division factor of 6 giving a frequency of at 3.333 MHz <ref page="80"/>.
+The clock source and clock prescaler can be configured by temporarily disabling I/O register 
+Configuration Change Protection (CCP). This is done by setting 0xD8 as the value of 
+<reg>CPU.CCP.CCP</reg> register, followed by setting the desired values to <reg>CLKCTRL.MCLKCTRLA.CLKSEL</reg>
+and <reg>CLKCTRL.MCLKCTRLB.PDIV</reg> registers. <topic>Fuses</topic> define whether OSC20M runs at 16 
+or 20 MHz: <reg>FUSE.OSCCFG.FREQSEL</reg>. 
+
 Ex 1: Disable prescaler to run at full 16/20 MHz
 
 ```
@@ -39,3 +47,5 @@ uint8_t spi_transfer(uint8_t data) {
     return data;
 }
 ```
+
+# ATtiny202 -> ATtiny814

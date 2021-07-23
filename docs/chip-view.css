@@ -1,3 +1,22 @@
+body {
+  background: black;
+  color: #eaeaea;
+  font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+}
+
+#chip-container {
+  display: flex;
+  flex-direction: row;
+}
+#chip-container #module-select {
+  position: absolute;
+}
+
+#chip-view {
+  flex-grow: 1;
+  justify-content: center;
+  color: black;
+}
 #chip-view .pin-label-wrapper {
   border-radius: 6px;
   border: 1px solid transparent;
@@ -17,6 +36,10 @@
 #chip-view.soic .soic-right {
   display: flex;
   flex-direction: column;
+}
+#chip-view.soic .soic-right {
+  flex-basis: 1px;
+  flex-grow: 1;
 }
 #chip-view.soic .soic-right .pin .pin-leg {
   border-bottom-right-radius: 5px;
@@ -47,6 +70,10 @@
   align-items: center;
   justify-content: center;
   color: white;
+}
+#chip-view.soic .soic-left {
+  flex-basis: 1px;
+  flex-grow: 1;
 }
 #chip-view.soic .soic-left .pin {
   flex-direction: row-reverse;
@@ -223,6 +250,61 @@
 }
 #chip-view .pin-signal.selected-unrelated {
   opacity: 0.5;
+}
+
+code .keyword,
+code .c-type {
+  color: #cb7832;
+}
+code .c-comment {
+  color: grey;
+}
+code .register {
+  color: #e0c46c;
+}
+code .constant {
+  color: #6896ba;
+}
+
+h3, h4 {
+  color: #b5e853;
+}
+
+#info-row {
+  display: flex;
+  flex-direction: row;
+  border-top: 1px solid #b5e853;
+  margin-top: 10px;
+}
+#info-row table {
+  border: 1px solid #b5e853;
+  border-collapse: collapse;
+}
+#info-row table td {
+  border: 1px solid #b5e853;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+#info-row table th {
+  color: black;
+  background-color: #b5e853;
+  border: 1px solid black;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+#info-row #module-info {
+  flex-basis: 100px;
+  flex-grow: 1;
+  padding-right: 4px;
+  border-right: 1px solid #b5e853;
+}
+#info-row #module-info .bitfield {
+  padding-left: 20px;
+}
+#info-row #tome {
+  flex-basis: 100px;
+  flex-grow: 1;
+  padding-left: 5px;
 }
 
 /*# sourceMappingURL=chip-view.css.map */
