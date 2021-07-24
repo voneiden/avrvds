@@ -578,12 +578,20 @@ viewBitfield bitfield =
             case bitfield.mask of
                 BitIndex bit ->
                     "[Bit " ++ String.fromInt bit ++ "]"
-                BitRange left right ->
-                    "[" ++ String.fromInt left ++ ":" ++ String.fromInt right ++ "]"
+                BitRange high low ->
+                    "[" ++ String.fromInt low ++ ":" ++ String.fromInt high ++ "]"
     in
     div [ class "bitfield" ] <| [h4 [] [text <| bitfield.name ++ " " ++ range ++ " " ++ bitfield.caption]]
     ++
     render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" bitfield.description)
+
+bitfieldSorter : Bitfield -> Int
+bitfieldSorter field =
+    case field.mask of
+        BitIndex i ->
+            i
+        BitRange _ j ->
+            j
 
 viewRegister : Register -> Html Msg
 viewRegister register =
@@ -594,7 +602,7 @@ viewRegister register =
             Nothing ->
                 [text "No bitfields"]
             Just bitfields ->
-                map viewBitfield bitfields
+                map viewBitfield (List.sortBy bitfieldSorter bitfields)
 
 
 
