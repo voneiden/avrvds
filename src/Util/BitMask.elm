@@ -69,12 +69,13 @@ type BitMask
 bitRange : Bits -> Maybe BitMask
 bitRange (Bits list) =
     let
+        length = List.length list - 1
         leftIndex =
             indexOfHighBitHelper list 0
-
+                |> Maybe.andThen (\x -> Just <| length - x)
         rightIndex =
             indexOfHighBitHelper (List.reverse list) 0
-                |> Maybe.andThen (\x -> Just <| 7 - x)
+
     in
     case ( leftIndex, rightIndex ) of
         ( Just left, Just right ) ->
