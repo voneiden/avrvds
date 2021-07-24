@@ -9,6 +9,7 @@ import Json.Decode as Decode exposing (Decoder, Error(..), andThen, array, float
 import Json.Decode.Pipeline exposing (required, resolve)
 import List exposing (map)
 import String exposing (dropRight, right, toInt)
+import Util.BitMask exposing (BitMask, decodeBitMask, decodeBits, decodeHex)
 
 
 type alias ChipDefinition =
@@ -245,7 +246,7 @@ registerDecoder =
 type alias Bitfield =
     { name: String
     , caption: String
-    , mask: String
+    , mask: BitMask
     , rw: String
     , description: Maybe String
     }
@@ -255,7 +256,7 @@ bitfieldDecoder =
     Decode.succeed Bitfield
         |> required "name" string
         |> required "caption" string
-        |> required "mask" string
+        |> required "mask" (string |> andThen decodeHex |> andThen decodeBits |> andThen decodeBitMask)
         |> required "rw" string
         |> required "description" (nullable string)
 

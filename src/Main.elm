@@ -16,7 +16,7 @@ import Dict.Extra exposing (groupBy)
 import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
-import Html.Lazy exposing (lazy, lazy2)
+import Html.Lazy exposing (lazy2)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
 import List exposing (concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
@@ -26,6 +26,7 @@ import Maybe exposing (withDefault)
 import Parser exposing (DeadEnd)
 import String exposing (fromInt, join, replace)
 import Url
+import Util.BitMask exposing (BitMask(..))
 import Util.ParserUtil exposing (parserDeadEndsToString)
 
 
@@ -94,7 +95,7 @@ type alias Flags =
     }
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init flags _ key =
     --(Loading, getDefinition)
     ( Loading (Session key flags.root) Nothing Nothing Nothing, Cmd.batch [getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root] )
 
@@ -182,11 +183,6 @@ updateGeneric msg model =
             ( Loading session Nothing cdef tome, Cmd.batch [getDefinition session.root definitionId, getCDEF session.root definitionId] )
         _ -> (model, Cmd.none)
 
-jfold : Maybe a -> Maybe b -> Maybe b
-jfold a b =
-    case a of
-        Just _ -> b
-        Nothing -> Nothing
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -572,9 +568,20 @@ viewChip state cdef signals =
                     ]
                 ]
 
+--maskToRange : String -> String
+
 viewBitfield : Bitfield -> Html Msg
 viewBitfield bitfield =
-    div [ class "bitfield" ] <| [h4 [] [text bitfield.caption]]
+
+    let
+        range =
+            case bitfield.mask of
+                BitIndex bit ->
+                    "[Bit " ++ String.fromInt bit ++ "]"
+                BitRange left right ->
+                    "[" ++ String.fromInt left ++ ":" ++ String.fromInt right ++ "]"
+    in
+    div [ class "bitfield" ] <| [h4 [] [text <| bitfield.name ++ " " ++ range ++ " " ++ bitfield.caption]]
     ++
     render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" bitfield.description)
 
