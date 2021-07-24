@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
@@ -19,6 +19,7 @@ import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagatio
 import Html.Lazy exposing (lazy2)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
+import Json.Encode
 import List exposing (concat, drop, filter, filterMap, length, map, member, reverse, sortBy, take)
 import Markdown.Parser
 import Markdown.Renderer exposing (Renderer)
@@ -47,7 +48,7 @@ main =
 
 type alias Session =
     { key : Nav.Key
-    , root: String
+    , flags: Flags
     }
 
 
@@ -92,12 +93,13 @@ modelSession model =
 
 type alias Flags =
     { root: String
+    , visibleModules: Maybe (List String)
     }
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags _ key =
     --(Loading, getDefinition)
-    ( Loading (Session key flags.root) Nothing Nothing Nothing, Cmd.batch [getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root] )
+    ( Loading (Session key flags) Nothing Nothing Nothing, Cmd.batch [getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root] )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -121,6 +123,9 @@ type Msg
     | SelectSignal (Maybe Signal)
     | ClearHighlight
 
+
+-- PORTS
+port storeVisibleModules : Json.Encode.Value -> Cmd msg
 
 toggleVisible : List DeviceModuleCategory -> DeviceModuleCategory -> List DeviceModuleCategory
 toggleVisible categories category =
@@ -180,8 +185,13 @@ updateGeneric msg model =
                 cdef = modelCDEF model
                 tome = modelTome model
             in
-            ( Loading session Nothing cdef tome, Cmd.batch [getDefinition session.root definitionId, getCDEF session.root definitionId] )
+            ( Loading session Nothing cdef tome, Cmd.batch [getDefinition session.flags.root definitionId, getCDEF session.flags.root definitionId] )
         _ -> (model, Cmd.none)
+
+
+encodeVisibleModules : List DeviceModuleCategory -> Json.Encode.Value
+encodeVisibleModules visibleModules =
+    Json.Encode.list (\x -> Json.Encode.string <| DeviceModuleCategory.toString x ) visibleModules
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -207,7 +217,12 @@ update msg model =
                                                     Nothing -> (InsufficientData session "Definition devices list is empty", Cmd.none)
                                                     Just device ->
                                                         let
-                                                            definition = DefinitionState chipDefinition variant device pinout [ IO, ANALOG, INTERFACE, TIMER, OTHER ] Nothing Nothing []
+                                                            visibleModules = case session.flags.visibleModules of
+                                                                Just list ->
+                                                                    List.filterMap DeviceModuleCategory.fromString list
+                                                                Nothing ->
+                                                                    [ IO, ANALOG, INTERFACE, TIMER, OTHER ]
+                                                            definition = DefinitionState chipDefinition variant device pinout visibleModules Nothing Nothing []
                                                         in
                                                         case (maybeCdef, maybeTome) of
                                                             (Just cdef, Just tome) ->
@@ -249,7 +264,10 @@ update msg model =
         Success session definition cdef tome ->
             case msg of
                 ToggleVisibleCategory category ->
-                    ( Success session { definition | visibleModules = toggleVisible definition.visibleModules category } cdef tome, Cmd.none )
+                    let
+                        newVisibleModules = toggleVisible definition.visibleModules category
+                    in
+                    ( Success session { definition | visibleModules = newVisibleModules } cdef tome, storeVisibleModules (encodeVisibleModules newVisibleModules) )
 
                 HighlightModule category ->
                     ( Success session { definition | highlightModule = Just category } cdef tome, Cmd.none )
