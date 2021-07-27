@@ -89,6 +89,12 @@ bitRange (Bits list) =
         _ ->
             Nothing
 
+bitLength : BitMask -> Int
+bitLength bits  =
+    case bits of
+        BitIndex _ -> 1
+        BitRange high low ->
+            high - low + 1
 
 isHex : Char -> Bool
 isHex c =

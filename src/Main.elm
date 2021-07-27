@@ -4,7 +4,7 @@ import Array exposing (Array, get)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import CustomMarkdown exposing (defaultHtmlRenderer)
-import Data.Chip exposing (Bitfield, ChipDefinition, ChipDevice, ChipDeviceModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
+import Data.Chip exposing (Bitfield, ChipDefinition, ChipDevice, ChipDeviceModule, ChipModule, ChipPin, ChipPinout, ChipVariant, Register, RegisterGroup, Signal, chipDefinitionDecoder)
 import Data.ChipCdef exposing (ChipCdef, chipCDEFDecoder)
 import Data.ChipTypes exposing (DeviceModuleCategory(..), Module, Pad(..), PinoutType(..))
 import Data.Tome as Tome exposing (Chapter, Section, SubSection, Tome, parseTome)
@@ -13,8 +13,8 @@ import Data.Util.Module as Module
 import Data.Util.Pad as Pad
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
-import Html exposing (Html, a, button, div, h2, h3, h4, input, label, text)
-import Html.Attributes exposing (checked, class, href, id, type_)
+import Html exposing (Attribute, Html, a, button, div, h2, h3, h4, input, label, text)
+import Html.Attributes exposing (checked, class, href, id, style, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
 import Html.Lazy exposing (lazy2)
 import Http exposing (Error(..))
@@ -27,7 +27,7 @@ import Maybe exposing (withDefault)
 import Parser exposing (DeadEnd)
 import String exposing (fromInt, join, replace)
 import Url
-import Util.BitMask exposing (BitMask(..))
+import Util.BitMask exposing (BitMask(..), bitLength)
 import Util.ParserUtil exposing (parserDeadEndsToString)
 
 
@@ -611,6 +611,7 @@ bitfieldSorter field =
         BitRange _ j ->
             j
 
+
 viewRegister : Register -> Html Msg
 viewRegister register =
     div [ class "register" ] <|
@@ -643,7 +644,7 @@ viewModule state cdef =
     div [id "module-info"] <|
         case state.selectedSignal of
             Nothing ->
-                [h2 [] [text "Module information - no module selected"]]
+                [viewModulesOverview state]
             Just signal ->
                 let
                     chipModules = filter (\m -> m.name == signal.deviceModule) state.chipDefinition.modules
@@ -667,6 +668,86 @@ viewModule state cdef =
 
                     [] ->
                         [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
+
+flexBasis : Int -> List (Attribute Msg)
+flexBasis basis =
+    let
+        basis_ = fromInt basis
+    in
+    [style "flex-basis" (basis_ ++ "px"), style "flex-grow" basis_]
+
+viewBitfieldOverview : BitfieldOverview -> Html Msg
+viewBitfieldOverview bitfieldOverview =
+    case bitfieldOverview of
+        JustBitfield bitfield ->
+            div ([ class "bitfield-overview"] ++ flexBasis (bitLength bitfield.mask)) <|
+                case bitfield.mask of
+                    BitIndex index ->
+                        [text bitfield.name]
+                    BitRange high low ->
+                        [text <| bitfield.name ++ "[" ++ fromInt high ++ ":" ++ fromInt low ++ "]"]
+        BlankBitfield length ->
+            div ([ class "bitfield-overview blank-bitfield"] ++ flexBasis (length)) [text ""]
+
+
+type BitfieldOverview =
+    JustBitfield Bitfield | BlankBitfield Int
+
+
+fillBitfieldGapsHelper : Int -> List Bitfield -> List (BitfieldOverview)
+fillBitfieldGapsHelper lastIndex bitfields =
+    let
+        createBlank : Int -> Int -> List BitfieldOverview
+        createBlank high low =
+            let
+                blankLength = high - low - 1
+            in
+            if (blankLength > 0) then
+                [BlankBitfield blankLength]
+            else
+                []
+    in
+    case bitfields of
+        field :: otherFields ->
+            case field.mask of
+                BitIndex index ->
+                    createBlank lastIndex index ++ JustBitfield field :: fillBitfieldGapsHelper index otherFields
+                BitRange high low ->
+                    createBlank lastIndex high ++ JustBitfield field :: fillBitfieldGapsHelper low otherFields
+        [] ->
+            []
+-- datasheet is high byte to low byte, so use the same
+fillBitfieldGaps : List Bitfield -> List (BitfieldOverview)
+fillBitfieldGaps bitfields =
+    fillBitfieldGapsHelper 8 (List.reverse <| List.sortBy bitfieldSorter bitfields)
+
+viewRegisterOverivew : Register -> Html Msg
+viewRegisterOverivew register =
+    div [ class "register-overview" ] <|
+        case register.bitfields of
+            Just bitfields ->
+                 map viewBitfieldOverview (fillBitfieldGaps bitfields)
+            Nothing ->
+                [text "No bitfields"]
+
+viewRegisterGroupOverivew : RegisterGroup -> List (Html Msg)
+viewRegisterGroupOverivew registerGroup =
+    map viewRegisterOverivew registerGroup.registers
+
+viewModuleOverview : ChipModule -> Maybe (Html Msg)
+viewModuleOverview chipModule =
+    case chipModule.registerGroups of
+        Just registerGroups ->
+            Just <| div [ class "module-overview" ] <|
+                [ div [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
+                ++
+                concat (map viewRegisterGroupOverivew registerGroups)
+        Nothing ->
+            Nothing
+
+viewModulesOverview : DefinitionState -> Html Msg
+viewModulesOverview state =
+    div [ class "modules-overview" ] <| [] ++ filterMap viewModuleOverview state.chipDefinition.modules
 
 viewChipSelect : DefinitionState -> Html Msg
 viewChipSelect state =
