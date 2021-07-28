@@ -10094,41 +10094,32 @@ var $author$project$Data$Util$Module$toString = function (moduleValue) {
 var $elm$virtual_dom$VirtualDom$lazy = _VirtualDom_lazy;
 var $elm$html$Html$Lazy$lazy = $elm$virtual_dom$VirtualDom$lazy;
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
-var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
-var $author$project$Main$flexBasis = function (basis) {
-	var basis_ = $elm$core$String$fromInt(basis);
-	return _List_fromArray(
-		[
-			A2($elm$html$Html$Attributes$style, 'flex-basis', basis_ + 'px'),
-			A2($elm$html$Html$Attributes$style, 'flex-grow', basis_)
-		]);
-};
-var $author$project$Main$viewRegisterFieldHeader = A2(
-	$elm$html$Html$div,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('register-overview-row register-overview-header')
-		]),
-	A2(
-		$elm$core$List$map,
-		function (i) {
-			return A2(
-				$elm$html$Html$div,
-				_Utils_ap(
+var $author$project$Main$viewRegisterFieldHeader = function () {
+	var template = $elm$html$Html$div(
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('bitfield-overview bitfield-header')
+			]));
+	return A2(
+		$elm$core$List$cons,
+		template(
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Field')
+				])),
+		A2(
+			$elm$core$List$map,
+			function (i) {
+				return template(
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('bitfield-overview')
-						]),
-					$author$project$Main$flexBasis(1)),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						$elm$core$String$fromInt(i))
-					]));
-		},
-		$elm$core$List$reverse(
-			A2($elm$core$List$range, 0, 7))));
+							$elm$html$Html$text(
+							$elm$core$String$fromInt(i))
+						]));
+			},
+			$elm$core$List$reverse(
+				A2($elm$core$List$range, 0, 7))));
+}();
 var $author$project$Main$BitfieldByte = F2(
 	function (a, b) {
 		return {$: 0, a: a, b: b};
@@ -10269,20 +10260,26 @@ var $author$project$Util$BitMask$bitLength = function (bits) {
 		return (high - low) + 1;
 	}
 };
-var $elm$html$Html$td = _VirtualDom_node('td');
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Main$gridSpan = function (length) {
+	return A2(
+		$elm$html$Html$Attributes$style,
+		'grid-column-end',
+		'span ' + $elm$core$String$fromInt(length));
+};
 var $author$project$Main$viewBitfieldOverview = F2(
 	function (_byte, bitfieldOverview) {
 		if (!bitfieldOverview.$) {
 			var bitfield = bitfieldOverview.a;
 			return A2(
 				$elm$html$Html$div,
-				_Utils_ap(
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('bitfield-overview')
-						]),
-					$author$project$Main$flexBasis(
-						$author$project$Util$BitMask$bitLength(bitfield.b1))),
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bitfield-overview'),
+						$author$project$Main$gridSpan(
+						$author$project$Util$BitMask$bitLength(bitfield.b1))
+					]),
 				function () {
 					var _v1 = bitfield.b1;
 					if (!_v1.$) {
@@ -10304,13 +10301,12 @@ var $author$project$Main$viewBitfieldOverview = F2(
 		} else {
 			var length = bitfieldOverview.a;
 			return A2(
-				$elm$html$Html$td,
-				_Utils_ap(
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('bitfield-overview blank-bitfield')
-						]),
-					$author$project$Main$flexBasis(length)),
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('bitfield-overview blank-bitfield'),
+						$author$project$Main$gridSpan(length)
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text('')
@@ -10331,18 +10327,25 @@ var $author$project$Main$viewRegisterOverivew = function (register) {
 	var _v0 = register.bx;
 	if (!_v0.$) {
 		var bitfields = _v0.a;
-		return A2(
-			$elm$core$List$map,
-			function (bitfieldByte) {
-				return A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('register-overview-row')
-						]),
-					$author$project$Main$viewBitfieldByte(bitfieldByte));
-			},
-			$author$project$Main$splitBitfieldBytes(bitfields));
+		return $elm$core$List$concat(
+			A2(
+				$elm$core$List$map,
+				function (bitfieldByte) {
+					return A2(
+						$elm$core$List$cons,
+						A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('bitfield-overview register-name')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text(register.b4)
+								])),
+						$author$project$Main$viewBitfieldByte(bitfieldByte));
+				},
+				$author$project$Main$splitBitfieldBytes(bitfields)));
 	} else {
 		return _List_fromArray(
 			[
@@ -10371,21 +10374,27 @@ var $author$project$Main$viewModuleOverview = function (chipModule) {
 					[
 						$elm$html$Html$Attributes$class('module-overview')
 					]),
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$h3,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(
-									$author$project$Data$Util$Module$toString(chipModule.b4) + (' - ' + chipModule.an))
-								])),
-							$author$project$Main$viewRegisterFieldHeader
-						]),
-					$elm$core$List$concat(
-						A2($elm$core$List$map, $author$project$Main$viewRegisterGroupOverivew, registerGroups)))));
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h3,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$author$project$Data$Util$Module$toString(chipModule.b4) + (' - ' + chipModule.an))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('bitfield-grid')
+							]),
+						_Utils_ap(
+							$author$project$Main$viewRegisterFieldHeader,
+							$elm$core$List$concat(
+								A2($elm$core$List$map, $author$project$Main$viewRegisterGroupOverivew, registerGroups))))
+					])));
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
@@ -10981,6 +10990,7 @@ var $dillonkearns$elm_markdown$Markdown$Html$tag = F2(
 			});
 	});
 var $elm$html$Html$tbody = _VirtualDom_node('tbody');
+var $elm$html$Html$td = _VirtualDom_node('td');
 var $elm$html$Html$th = _VirtualDom_node('th');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
 var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
