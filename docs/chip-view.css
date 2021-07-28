@@ -301,6 +301,55 @@ h3, h4 {
 #info-row #module-info .bitfield {
   padding-left: 20px;
 }
+#info-row #module-info .modules-overview {
+  /*
+  .register-overview {
+    display: flex;
+    flex-direction: row;
+    > div {
+      flex-grow: 1;
+    }
+    border-top: 1px solid white;
+    &:last-child {
+      border-bottom: 1px solid white;
+    }
+    .bitfield-overview {
+      display: flex;
+      justify-content: center;
+      border-left: 1px solid white;
+      &:last-child {
+        border-right: 1px solid white;
+      }
+    }
+  }
+   */
+}
+#info-row #module-info .modules-overview table {
+  width: 100%;
+}
+#info-row #module-info .modules-overview .register-overview-header {
+  color: #b5e853;
+  font-weight: bold;
+  background-color: #151e04;
+}
+#info-row #module-info .modules-overview .register-overview-row {
+  display: flex;
+  border-top: 1px solid #4f5f25;
+}
+#info-row #module-info .modules-overview .register-overview-row:last-child {
+  border-bottom: 1px solid #4f5f25;
+}
+#info-row #module-info .modules-overview .register-overview-row .bitfield-overview {
+  display: flex;
+  justify-content: center;
+  border-left: 1px solid #4f5f25;
+}
+#info-row #module-info .modules-overview .register-overview-row .bitfield-overview:last-child {
+  border-right: 1px solid #4f5f25;
+}
+#info-row #module-info .modules-overview .register-overview-row .blank-bitfield {
+  background-color: #151e04;
+}
 #info-row #tome {
   flex-basis: 100px;
   flex-grow: 1;
