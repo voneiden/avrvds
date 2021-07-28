@@ -7,7 +7,19 @@
 <body>
 <div id="elm-node"></div>
 <script>
-  Elm.Main.init({flags: {root: '/avrvds/'}})
+  const visibleModulesKey = 'avrvds-visibleModules';
+
+  let visibleModules = localStorage.getItem(visibleModulesKey);
+  const app = Elm.Main.init({
+    flags: {
+      root: '/avrvds/',
+      visibleModules: visibleModules ? JSON.parse(visibleModules) : null
+    }
+  })
+  console.log("GOT APP", app, app.ports)
+  app.ports.storeVisibleModules.subscribe(function (visibleModules) {
+    localStorage.setItem(visibleModulesKey, JSON.stringify(visibleModules))
+  });
 
 </script>
 </body>
