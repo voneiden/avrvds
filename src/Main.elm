@@ -14,9 +14,9 @@ import Data.Util.Pad as Pad
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Attribute, Html, a, button, div, h2, h3, h4, input, label, text)
-import Html.Attributes exposing (checked, class, href, id, style, type_)
+import Html.Attributes exposing (checked, class, colspan, href, id, style, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
-import Html.Lazy exposing (lazy2)
+import Html.Lazy exposing (lazy, lazy2)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
 import Json.Encode
@@ -25,9 +25,11 @@ import Markdown.Parser
 import Markdown.Renderer exposing (Renderer)
 import Maybe exposing (withDefault)
 import Parser exposing (DeadEnd)
+import Set
 import String exposing (fromInt, join, replace)
+import Tuple exposing (first, second)
 import Url
-import Util.BitMask exposing (BitMask(..), bitLength)
+import Util.BitMask exposing (BitMask(..), bitLength, maskByte)
 import Util.ParserUtil exposing (parserDeadEndsToString)
 
 
@@ -586,8 +588,6 @@ viewChip state cdef signals =
                     ]
                 ]
 
---maskToRange : String -> String
-
 viewBitfield : Bitfield -> Html Msg
 viewBitfield bitfield =
 
@@ -676,26 +676,37 @@ flexBasis basis =
     in
     [style "flex-basis" (basis_ ++ "px"), style "flex-grow" basis_]
 
-viewBitfieldOverview : BitfieldOverview -> Html Msg
-viewBitfieldOverview bitfieldOverview =
+colSpan : Int -> Attribute Msg
+colSpan length =
+    Html.Attributes.colspan length
+
+
+viewBitfieldByte : BitfieldByte -> List (Html Msg)
+viewBitfieldByte bitfieldByte =
+    case bitfieldByte of
+        BitfieldByte byte bitfields ->
+            map (\f -> viewBitfieldOverview byte f) (fillBitfieldGaps byte bitfields)
+
+viewBitfieldOverview : Int -> BitfieldOverview -> Html Msg
+viewBitfieldOverview byte bitfieldOverview =
     case bitfieldOverview of
         JustBitfield bitfield ->
-            div ([ class "bitfield-overview"] ++ flexBasis (bitLength bitfield.mask)) <|
+            Html.div ([ class "bitfield-overview"] ++ flexBasis (bitLength bitfield.mask)) <|
                 case bitfield.mask of
                     BitIndex index ->
                         [text bitfield.name]
                     BitRange high low ->
                         [text <| bitfield.name ++ "[" ++ fromInt high ++ ":" ++ fromInt low ++ "]"]
         BlankBitfield length ->
-            div ([ class "bitfield-overview blank-bitfield"] ++ flexBasis (length)) [text ""]
+            Html.td ([ class "bitfield-overview blank-bitfield"] ++ flexBasis length) [text ""]
 
 
 type BitfieldOverview =
     JustBitfield Bitfield | BlankBitfield Int
 
 
-fillBitfieldGapsHelper : Int -> List Bitfield -> List (BitfieldOverview)
-fillBitfieldGapsHelper lastIndex bitfields =
+fillBitfieldGapsHelper : (Int, Int) -> List Bitfield -> List (BitfieldOverview)
+fillBitfieldGapsHelper (lastIndex, minIndex) bitfields =
     let
         createBlank : Int -> Int -> List BitfieldOverview
         createBlank high low =
@@ -711,43 +722,68 @@ fillBitfieldGapsHelper lastIndex bitfields =
         field :: otherFields ->
             case field.mask of
                 BitIndex index ->
-                    createBlank lastIndex index ++ JustBitfield field :: fillBitfieldGapsHelper index otherFields
+                    createBlank lastIndex index ++ JustBitfield field :: fillBitfieldGapsHelper (index, minIndex) otherFields
                 BitRange high low ->
-                    createBlank lastIndex high ++ JustBitfield field :: fillBitfieldGapsHelper low otherFields
+                    createBlank lastIndex high ++ JustBitfield field :: fillBitfieldGapsHelper (low, minIndex) otherFields
         [] ->
-            []
+            createBlank lastIndex minIndex
 -- datasheet is high byte to low byte, so use the same
-fillBitfieldGaps : List Bitfield -> List (BitfieldOverview)
-fillBitfieldGaps bitfields =
-    fillBitfieldGapsHelper 8 (List.reverse <| List.sortBy bitfieldSorter bitfields)
+fillBitfieldGaps : Int -> List Bitfield -> List (BitfieldOverview)
+fillBitfieldGaps byte bitfields =
+    let
+        multiplier = byte + 1
+        -- eg (8, -1)
+        initialIndex = (multiplier * 8, multiplier * 8 - 9)
+    in
+    fillBitfieldGapsHelper initialIndex (List.reverse <| List.sortBy bitfieldSorter bitfields)
 
-viewRegisterOverivew : Register -> Html Msg
+type BitfieldByte = BitfieldByte Int (List Bitfield)
+
+splitBitfieldBytes : List Bitfield -> List (BitfieldByte)
+splitBitfieldBytes bitfields =
+    let
+        fieldBytes = List.map (\f -> (maskByte f.mask, f)) bitfields
+        bytes = List.sort <| Set.toList <| Set.fromList <| List.map first fieldBytes
+    in
+    List.map (\b -> BitfieldByte b <| List.map second <| List.filter (\fb -> first fb == b) fieldBytes) bytes
+
+viewRegisterOverivew : Register -> List (Html Msg)
 viewRegisterOverivew register =
-    div [ class "register-overview" ] <|
-        case register.bitfields of
-            Just bitfields ->
-                 map viewBitfieldOverview (fillBitfieldGaps bitfields)
-            Nothing ->
-                [text "No bitfields"]
+    case register.bitfields of
+        Just bitfields ->
+            map (\bitfieldByte -> Html.div [class "register-overview-row"] <| viewBitfieldByte bitfieldByte) <| splitBitfieldBytes bitfields
+        Nothing ->
+            [Html.div [] [text "No bitfields"]]
 
 viewRegisterGroupOverivew : RegisterGroup -> List (Html Msg)
 viewRegisterGroupOverivew registerGroup =
-    map viewRegisterOverivew registerGroup.registers
+    concat <| map viewRegisterOverivew registerGroup.registers
+
+viewRegisterFieldHeader : Html Msg
+viewRegisterFieldHeader =
+    div [class "register-overview-row register-overview-header"]
+        <| map (\i -> div ([class "bitfield-overview"] ++ flexBasis 1) [text <| fromInt i]) (List.reverse <| List.range 0 7)
 
 viewModuleOverview : ChipModule -> Maybe (Html Msg)
 viewModuleOverview chipModule =
     case chipModule.registerGroups of
         Just registerGroups ->
             Just <| div [ class "module-overview" ] <|
-                [ div [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
+                [ h3 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]
+                , viewRegisterFieldHeader
+                ]
                 ++
-                concat (map viewRegisterGroupOverivew registerGroups)
+                (concat <| map viewRegisterGroupOverivew registerGroups)
+
         Nothing ->
             Nothing
 
 viewModulesOverview : DefinitionState -> Html Msg
 viewModulesOverview state =
-    div [ class "modules-overview" ] <| [] ++ filterMap viewModuleOverview state.chipDefinition.modules
+    let
+        modules = filter (\m -> member m.group state.visibleModules) state.chipDefinition.modules
+    in
+    lazy (\modules_ -> div [ class "modules-overview" ] <| [h2 [] [text "Modules overview"]] ++ filterMap viewModuleOverview modules_) modules
 
 viewChipSelect : DefinitionState -> Html Msg
 viewChipSelect state =

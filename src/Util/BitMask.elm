@@ -66,6 +66,15 @@ type BitMask
     | BitRange Int Int
 
 
+maskByte : BitMask -> Int
+maskByte mask =
+    case mask of
+        BitIndex index ->
+            index // 8
+        BitRange _ low ->
+            low // 8
+
+
 bitRange : Bits -> Maybe BitMask
 bitRange (Bits list) =
     let

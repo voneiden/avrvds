@@ -202,6 +202,7 @@ signalDecoder =
 type alias ChipModule =
     { id: String
     , name : Module
+    , group : DeviceModuleCategory
     , caption: String
     , registerGroups : Maybe (List RegisterGroup)
     }
@@ -211,6 +212,7 @@ chipModuleDecoder =
     Decode.succeed ChipModule
         |> required "id" string
         |> required "name" (string |> andThen Module.decode)
+        |> required "name"  (string |> andThen Module.decode |> andThen moduleCategoryDecoder)
         |> required "caption" string
         |> required "register_groups" (nullable (list registerGroupDecoder))
 

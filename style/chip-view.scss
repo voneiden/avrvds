@@ -253,9 +253,59 @@ h3, h4 {
     flex-grow: 1;
     padding-right: 4px;
     border-right: 1px solid #b5e853;
-
     .bitfield {
       padding-left: 20px;
+    }
+
+    .modules-overview {
+      table {
+        width: 100%;
+      }
+      $table-border: 1px solid #4f5f25;
+      .register-overview-header {
+        color: #b5e853;
+        font-weight: bold;
+        background-color: #151e04;
+      }
+      .register-overview-row {
+        display: flex;
+        border-top: $table-border;
+        &:last-child {
+          border-bottom: $table-border;
+        }
+        .bitfield-overview {
+          display: flex;
+          justify-content: center;
+          border-left: $table-border;
+          &:last-child {
+            border-right: $table-border;
+          }
+        }
+        .blank-bitfield {
+          background-color: #151e04;
+        }
+      }
+      /*
+      .register-overview {
+        display: flex;
+        flex-direction: row;
+        > div {
+          flex-grow: 1;
+        }
+        border-top: 1px solid white;
+        &:last-child {
+          border-bottom: 1px solid white;
+        }
+        .bitfield-overview {
+          display: flex;
+          justify-content: center;
+          border-left: 1px solid white;
+          &:last-child {
+            border-right: 1px solid white;
+          }
+        }
+      }
+       */
     }
   }
   #tome {
