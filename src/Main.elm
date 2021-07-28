@@ -680,6 +680,10 @@ colSpan : Int -> Attribute Msg
 colSpan length =
     Html.Attributes.colspan length
 
+gridSpan : Int -> Attribute Msg
+gridSpan length =
+    style "grid-column-end" <| "span " ++ fromInt length
+
 
 viewBitfieldByte : BitfieldByte -> List (Html Msg)
 viewBitfieldByte bitfieldByte =
@@ -691,14 +695,14 @@ viewBitfieldOverview : Int -> BitfieldOverview -> Html Msg
 viewBitfieldOverview byte bitfieldOverview =
     case bitfieldOverview of
         JustBitfield bitfield ->
-            Html.div ([ class "bitfield-overview"] ++ flexBasis (bitLength bitfield.mask)) <|
+            Html.div [ class "bitfield-overview", gridSpan (bitLength bitfield.mask)] <|
                 case bitfield.mask of
                     BitIndex index ->
                         [text bitfield.name]
                     BitRange high low ->
                         [text <| bitfield.name ++ "[" ++ fromInt high ++ ":" ++ fromInt low ++ "]"]
         BlankBitfield length ->
-            Html.td ([ class "bitfield-overview blank-bitfield"] ++ flexBasis length) [text ""]
+            Html.div [ class "bitfield-overview blank-bitfield", gridSpan length] [text ""]
 
 
 type BitfieldOverview =
@@ -739,7 +743,7 @@ fillBitfieldGaps byte bitfields =
 
 type BitfieldByte = BitfieldByte Int (List Bitfield)
 
-splitBitfieldBytes : List Bitfield -> List (BitfieldByte)
+splitBitfieldBytes : List Bitfield -> List BitfieldByte
 splitBitfieldBytes bitfields =
     let
         fieldBytes = List.map (\f -> (maskByte f.mask, f)) bitfields
@@ -751,7 +755,7 @@ viewRegisterOverivew : Register -> List (Html Msg)
 viewRegisterOverivew register =
     case register.bitfields of
         Just bitfields ->
-            map (\bitfieldByte -> Html.div [class "register-overview-row"] <| viewBitfieldByte bitfieldByte) <| splitBitfieldBytes bitfields
+            concat <| map (\bitfieldByte -> div [class "bitfield-overview register-name"] [text register.name] :: viewBitfieldByte bitfieldByte) <| splitBitfieldBytes bitfields
         Nothing ->
             [Html.div [] [text "No bitfields"]]
 
@@ -759,10 +763,12 @@ viewRegisterGroupOverivew : RegisterGroup -> List (Html Msg)
 viewRegisterGroupOverivew registerGroup =
     concat <| map viewRegisterOverivew registerGroup.registers
 
-viewRegisterFieldHeader : Html Msg
+viewRegisterFieldHeader : List (Html Msg)
 viewRegisterFieldHeader =
-    div [class "register-overview-row register-overview-header"]
-        <| map (\i -> div ([class "bitfield-overview"] ++ flexBasis 1) [text <| fromInt i]) (List.reverse <| List.range 0 7)
+    let
+        template = Html.div [class "bitfield-overview bitfield-header"]
+    in
+    template [text "Field"] :: map (\i -> template [text <| fromInt i]) (List.reverse <| List.range 0 7)
 
 viewModuleOverview : ChipModule -> Maybe (Html Msg)
 viewModuleOverview chipModule =
@@ -770,10 +776,8 @@ viewModuleOverview chipModule =
         Just registerGroups ->
             Just <| div [ class "module-overview" ] <|
                 [ h3 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]
-                , viewRegisterFieldHeader
+                , div [ class "bitfield-grid"] (viewRegisterFieldHeader ++ (concat <| map viewRegisterGroupOverivew registerGroups))
                 ]
-                ++
-                (concat <| map viewRegisterGroupOverivew registerGroups)
 
         Nothing ->
             Nothing

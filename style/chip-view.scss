@@ -1,6 +1,7 @@
 $pin-width: 22px;
 $pin-length: 25px;
 $label-border-radius: 6px;
+$lovely-green: #b5e853;
 
 body {
   background: black;
@@ -261,7 +262,35 @@ h3, h4 {
       table {
         width: 100%;
       }
-      $table-border: 1px solid #4f5f25;
+      $table-border-color: #4f5f25;
+      $table-border: 2px solid #4f5f25;
+
+      .bitfield-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+        grid-gap: 1px;
+        .register-name {
+          color: $lovely-green;
+        }
+        .bitfield-header {
+          background-color: $lovely-green;
+          color: black;
+          font-weight: bold;
+        }
+        .bitfield-overview {
+          display: flex;
+          height: 19px;
+          justify-content: center;
+          //border: $table-border;
+          box-shadow:0 0 0 1px $table-border-color;
+          //border-collapse: collapse;
+          //box-sizing: border-box;
+        }
+        .blank-bitfield {
+          background-color: #151e04;
+        }
+      }
+
       .register-overview-header {
         color: #b5e853;
         font-weight: bold;
