@@ -51,7 +51,7 @@ main =
 
 type alias Session =
     { key : Nav.Key
-    , flags: Flags
+    , flags : Flags
     }
 
 
@@ -62,21 +62,29 @@ type alias Session =
 type alias DefinitionState =
     { chipDefinition : ChipDefinition
     , variant : ChipVariant
-    , device: ChipDevice
+    , device : ChipDevice
     , pinout : ChipPinout
     , visibleModules : List DeviceModuleCategory
     , highlight : HighlightMode
     , highlightRelatedCategories : List DeviceModuleCategory
-    } -- TODO well CDEF can't go here can it now?
+    }
 
 
-type HighlightMode = NoHighlight
-                   | SignalHighlight Signal Module
-                   | ModuleHoverHighlight Module
-                   | ModuleSelectHighlight Module Module -- second module can be used to temporarily override selected
-                   | RegisterHighlight Register Module
-                   | BitfieldHighlight Bitfield Register Module
-    -- | RegisterHighlight Register Module | BitfieldHighlight Bitfield Module
+
+-- TODO well CDEF can't go here can it now?
+
+
+type HighlightMode
+    = NoHighlight
+    | SignalHighlight Signal Module
+    | ModuleHoverHighlight Module
+    | ModuleSelectHighlight Module Module -- second module can be used to temporarily override selected
+    | RegisterHighlight Register Module
+    | BitfieldHighlight Bitfield Register Module
+
+
+
+-- | RegisterHighlight Register Module | BitfieldHighlight Bitfield Module
 
 
 type Model
@@ -92,25 +100,30 @@ modelSession model =
     case model of
         RequestFailed session _ ->
             session
+
         ParsingTomeFailed session _ ->
             session
+
         InsufficientData session _ ->
             session
+
         Loading session _ _ _ ->
             session
+
         Success session _ _ _ ->
             session
 
 
 type alias Flags =
-    { root: String
-    , visibleModules: Maybe (List String)
+    { root : String
+    , visibleModules : Maybe (List String)
     }
+
 
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags _ key =
     --(Loading, getDefinition)
-    ( Loading (Session key flags) Nothing Nothing Nothing, Cmd.batch [getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root] )
+    ( Loading (Session key flags) Nothing Nothing Nothing, Cmd.batch [ getDefinition flags.root "ATtiny814", getCDEF flags.root "ATtiny814", getTome flags.root ] )
 
 
 onUrlRequest : UrlRequest -> Msg
@@ -121,6 +134,7 @@ onUrlRequest urlRequest =
 onUrlChange : Url.Url -> Msg
 onUrlChange url =
     UrlChanged url
+
 
 type Msg
     = UrlRequested UrlRequest
@@ -133,8 +147,12 @@ type Msg
     | SetHighlight HighlightMode
 
 
+
 -- PORTS
+
+
 port storeVisibleModules : Json.Encode.Value -> Cmd msg
+
 
 toggleVisible : List DeviceModuleCategory -> DeviceModuleCategory -> List DeviceModuleCategory
 toggleVisible categories category =
@@ -145,38 +163,49 @@ toggleVisible categories category =
         False ->
             categories ++ [ category ]
 
+
 modelCDEF : Model -> Maybe ChipCdef
 modelCDEF model =
     case model of
         Loading _ _ cdef _ ->
             cdef
+
         Success _ _ cdef _ ->
             Just cdef
+
         _ ->
             Nothing
+
 
 modelTome : Model -> Maybe Tome
 modelTome model =
     case model of
         Loading _ _ _ tome ->
             tome
+
         Success _ _ _ tome ->
             Just tome
+
         _ ->
             Nothing
 
+
+
 -- For Msg's that are not model specific
-updateGeneric : Msg -> Model -> ( Model, Cmd Msg)
+
+
+updateGeneric : Msg -> Model -> ( Model, Cmd Msg )
 updateGeneric msg model =
     let
-        session = modelSession model
+        session =
+            modelSession model
     in
     case msg of
         UrlRequested urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
                     --( Test2 session url.fragment, Nav.pushUrl session.key (Url.toString url) )
-                    (model, Nav.pushUrl session.key (Url.toString url) )
+                    ( model, Nav.pushUrl session.key (Url.toString url) )
 
                 --(Test2 session url.fragment, Cmd.none)
                 Browser.External url ->
@@ -191,90 +220,122 @@ updateGeneric msg model =
 
         LoadDevice definitionId ->
             let
-                cdef = modelCDEF model
-                tome = modelTome model
+                cdef =
+                    modelCDEF model
+
+                tome =
+                    modelTome model
             in
-            ( Loading session Nothing cdef tome, Cmd.batch [getDefinition session.flags.root definitionId, getCDEF session.flags.root definitionId] )
-        _ -> (model, Cmd.none)
+            ( Loading session Nothing cdef tome, Cmd.batch [ getDefinition session.flags.root definitionId, getCDEF session.flags.root definitionId ] )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 encodeVisibleModules : List DeviceModuleCategory -> Json.Encode.Value
 encodeVisibleModules visibleModules =
-    Json.Encode.list (\x -> Json.Encode.string <| DeviceModuleCategory.toString x ) visibleModules
+    Json.Encode.list (\x -> Json.Encode.string <| DeviceModuleCategory.toString x) visibleModules
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        Loading session maybeDefinition maybeCdef maybeTome->
+        Loading session maybeDefinition maybeCdef maybeTome ->
             case msg of
                 ReceiveDefinition result ->
                     case result of
                         Ok chipDefinition ->
                             let
-                                maybeVariant = get 0 chipDefinition.variants
-                                maybePinout = get 0 chipDefinition.pinouts
-                                maybeDevice = get 0 chipDefinition.devices
+                                maybeVariant =
+                                    get 0 chipDefinition.variants
+
+                                maybePinout =
+                                    get 0 chipDefinition.pinouts
+
+                                maybeDevice =
+                                    get 0 chipDefinition.devices
                             in
-                                case maybeVariant of
-                                    Nothing -> ( InsufficientData session "Definition variants list is empty", Cmd.none )
-                                    Just variant ->
-                                        case maybePinout of
-                                            Nothing -> (InsufficientData session "Definition pinouts list is empty", Cmd.none)
-                                            Just pinout ->
-                                                case maybeDevice of
-                                                    Nothing -> (InsufficientData session "Definition devices list is empty", Cmd.none)
-                                                    Just device ->
-                                                        let
-                                                            visibleModules = case session.flags.visibleModules of
+                            case maybeVariant of
+                                Nothing ->
+                                    ( InsufficientData session "Definition variants list is empty", Cmd.none )
+
+                                Just variant ->
+                                    case maybePinout of
+                                        Nothing ->
+                                            ( InsufficientData session "Definition pinouts list is empty", Cmd.none )
+
+                                        Just pinout ->
+                                            case maybeDevice of
+                                                Nothing ->
+                                                    ( InsufficientData session "Definition devices list is empty", Cmd.none )
+
+                                                Just device ->
+                                                    let
+                                                        visibleModules =
+                                                            case session.flags.visibleModules of
                                                                 Just list ->
                                                                     List.filterMap DeviceModuleCategory.fromString list
+
                                                                 Nothing ->
                                                                     [ IO, ANALOG, INTERFACE, TIMER, OTHER ]
-                                                            definition = DefinitionState chipDefinition variant device pinout visibleModules NoHighlight []
-                                                        in
-                                                        case (maybeCdef, maybeTome) of
-                                                            (Just cdef, Just tome) ->
-                                                                ( Success session definition cdef tome, Cmd.none )
-                                                            _ ->
-                                                                ( Loading session (Just definition) maybeCdef maybeTome, Cmd.none )
+
+                                                        definition =
+                                                            DefinitionState chipDefinition variant device pinout visibleModules NoHighlight []
+                                                    in
+                                                    case ( maybeCdef, maybeTome ) of
+                                                        ( Just cdef, Just tome ) ->
+                                                            ( Success session definition cdef tome, Cmd.none )
+
+                                                        _ ->
+                                                            ( Loading session (Just definition) maybeCdef maybeTome, Cmd.none )
+
                         Err error ->
                             ( RequestFailed session error, Cmd.none )
 
                 ReceiveCDEF result ->
                     case result of
                         Ok cdef ->
-                            case (maybeDefinition, maybeTome) of
-                                (Just definition, Just tome) ->
+                            case ( maybeDefinition, maybeTome ) of
+                                ( Just definition, Just tome ) ->
                                     ( Success session definition cdef tome, Cmd.none )
+
                                 _ ->
                                     ( Loading session maybeDefinition (Just cdef) maybeTome, Cmd.none )
+
                         Err err ->
-                            ( RequestFailed session err, Cmd.none)
+                            ( RequestFailed session err, Cmd.none )
+
                 ReceiveTome result ->
                     case result of
                         Ok tomeString ->
                             let
-                                tomeResult = parseTome tomeString
+                                tomeResult =
+                                    parseTome tomeString
                             in
                             case tomeResult of
                                 Ok tome ->
-                                    case (maybeDefinition, maybeCdef) of
-                                        (Just definition, Just cdef) ->
-                                            ( Success session definition cdef tome, Cmd.none)
+                                    case ( maybeDefinition, maybeCdef ) of
+                                        ( Just definition, Just cdef ) ->
+                                            ( Success session definition cdef tome, Cmd.none )
+
                                         _ ->
-                                            ( Loading session maybeDefinition maybeCdef (Just tome), Cmd.none)
+                                            ( Loading session maybeDefinition maybeCdef (Just tome), Cmd.none )
+
                                 Err err ->
                                     ( ParsingTomeFailed session err, Cmd.none )
+
                         Err err ->
-                            ( RequestFailed session err, Cmd.none)
+                            ( RequestFailed session err, Cmd.none )
+
                 _ ->
                     updateGeneric msg model
+
         Success session definition cdef tome ->
             case msg of
                 ToggleVisibleCategory category ->
                     let
-                        newVisibleModules = toggleVisible definition.visibleModules category
+                        newVisibleModules =
+                            toggleVisible definition.visibleModules category
                     in
                     ( Success session { definition | visibleModules = newVisibleModules } cdef tome, storeVisibleModules (encodeVisibleModules newVisibleModules) )
 
@@ -283,8 +344,11 @@ update msg model =
 
                 _ ->
                     updateGeneric msg model
+
         _ ->
             updateGeneric msg model
+
+
 
 -- SUBSCRIPTIONS
 
@@ -370,8 +434,8 @@ signalGroupsFitPads signalGroups availablePads =
 
                 Just usedPads ->
                     --let
-                        --tmp =
-                        --     Debug.log ("Fitted" ++ toString x) (length x)
+                    --tmp =
+                    --     Debug.log ("Fitted" ++ toString x) (length x)
                     --in
                     Just ( filter (\p -> not (member p usedPads)) availablePads, x )
 
@@ -398,6 +462,7 @@ fitSignalGroups signalGroups initPads pads =
                 Just ( remainingPads, fittedSignals ) ->
                     fittedSignals ++ fitSignalGroups (filter ((/=) fittedSignals) signalGroups) initPads remainingPads
 
+
 isPort : Pad -> Bool
 isPort pad =
     case pad of
@@ -409,6 +474,7 @@ isPort pad =
 
         _ ->
             True
+
 
 filterPortPads : List Pad -> List Pad
 filterPortPads pads =
@@ -460,6 +526,7 @@ signalToString signal =
     case signal.function of
         "IOPORT" ->
             Pad.toString signal.pad
+
         _ ->
             replace "_" "-" result
 
@@ -469,30 +536,41 @@ highlightSignal state signal =
     case state.highlight of
         SignalHighlight _ highlightedModule ->
             signal.deviceModule == highlightedModule
+
         ModuleHoverHighlight highlightedModule ->
             signal.deviceModule == highlightedModule
+
         ModuleSelectHighlight selectedModule highlightedModule ->
             signal.deviceModule == highlightedModule || signal.deviceModule == selectedModule
+
         RegisterHighlight _ highlightedModule ->
             signal.deviceModule == highlightedModule
+
         BitfieldHighlight _ _ highlightedModule ->
             signal.deviceModule == highlightedModule
+
         NoHighlight ->
             False
+
 
 highlightSignalClass : Bool -> Maybe String
 highlightSignalClass highlight =
     case highlight of
-        True -> Just "highlight"
-        False -> Nothing
+        True ->
+            Just "highlight"
+
+        False ->
+            Nothing
 
 
 selectSignalClassByModule : Module -> Signal -> Maybe String
 selectSignalClassByModule deviceModule signal =
     if signal.deviceModule == deviceModule then
         Just "selected-related"
+
     else
         Just "selected-unrelated"
+
 
 selectSignalClass : DefinitionState -> Signal -> Maybe String
 selectSignalClass state signal =
@@ -501,18 +579,25 @@ selectSignalClass state signal =
             if signal.deviceModule == highlightedSignal.deviceModule then
                 if signal.function == highlightedSignal.function then
                     Just "selected"
+
                 else
                     Just "selected-related"
+
             else
                 Just "selected-unrelated"
+
         ModuleHoverHighlight highlightedModule ->
             selectSignalClassByModule highlightedModule signal
+
         ModuleSelectHighlight _ highlightedModule ->
             selectSignalClassByModule highlightedModule signal
+
         RegisterHighlight _ highlightedModule ->
             selectSignalClassByModule highlightedModule signal
+
         BitfieldHighlight _ _ highlightedModule ->
             selectSignalClassByModule highlightedModule signal
+
         NoHighlight ->
             Nothing
 
@@ -522,40 +607,53 @@ highlightModule state deviceModule =
     case state.highlight of
         SignalHighlight highlightedSignal _ ->
             SetHighlight <| SignalHighlight highlightedSignal deviceModule
+
         RegisterHighlight highlightedRegister _ ->
             SetHighlight <| RegisterHighlight highlightedRegister deviceModule
+
         BitfieldHighlight highlightedBitfield highlightedRegister _ ->
             SetHighlight <| BitfieldHighlight highlightedBitfield highlightedRegister deviceModule
+
         ModuleHoverHighlight _ ->
-                SetHighlight <| ModuleHoverHighlight deviceModule
+            SetHighlight <| ModuleHoverHighlight deviceModule
+
         ModuleSelectHighlight selectedModule _ ->
             SetHighlight <| ModuleSelectHighlight selectedModule deviceModule
+
         NoHighlight ->
             SetHighlight <| ModuleHoverHighlight deviceModule
+
 
 findModuleWithRegister : DefinitionState -> Register -> Maybe ChipModule
 findModuleWithRegister state register =
     findOne (\m -> List.member register (concat <| List.map .registers <| Maybe.withDefault [] m.registerGroups)) state.chipDefinition.modules
+
 
 clearModuleHighlight : DefinitionState -> Msg
 clearModuleHighlight state =
     case state.highlight of
         SignalHighlight highlightedSignal _ ->
             SetHighlight <| SignalHighlight highlightedSignal highlightedSignal.deviceModule
+
         RegisterHighlight highlightedRegister _ ->
             case findModuleWithRegister state highlightedRegister of
                 Just chipModule ->
                     SetHighlight <| RegisterHighlight highlightedRegister chipModule.name
+
                 Nothing ->
                     SetHighlight NoHighlight
+
         BitfieldHighlight _ highlightedRegister _ ->
             case findModuleWithRegister state highlightedRegister of
                 Just chipModule ->
                     SetHighlight <| RegisterHighlight highlightedRegister chipModule.name
+
                 Nothing ->
                     SetHighlight NoHighlight
+
         ModuleSelectHighlight selectedModule _ ->
             SetHighlight <| ModuleSelectHighlight selectedModule selectedModule
+
         _ ->
             SetHighlight <| NoHighlight
 
@@ -563,20 +661,21 @@ clearModuleHighlight state =
 viewPinSignal : DefinitionState -> Signal -> Html Msg
 viewPinSignal state signal =
     div
-        [ class <| cls
-            [ Just "pin-signal"
-            , Just signal.function
-            , highlightSignalClass <| highlightSignal state signal
-            , selectSignalClass state signal
-            ]
+        [ class <|
+            cls
+                [ Just "pin-signal"
+                , Just signal.function
+                , highlightSignalClass <| highlightSignal state signal
+                , selectSignalClass state signal
+                ]
         , onMouseEnter <| highlightModule state signal.deviceModule
         , onMouseLeave <| clearModuleHighlight state
+
         --, onClick <| SelectSignal (Just signal)
-        , stopPropagationOn "click" (Decoder.succeed (SetHighlight <| SignalHighlight signal signal.deviceModule, True))
+        , stopPropagationOn "click" (Decoder.succeed ( SetHighlight <| SignalHighlight signal signal.deviceModule, True ))
         ]
-        [
-            div [ class "pin-label-wrapper"] [
-                div [ class "pin-label" ] [ text <| signalToString signal]
+        [ div [ class "pin-label-wrapper" ]
+            [ div [ class "pin-label" ] [ text <| signalToString signal ]
             ]
         ]
 
@@ -586,22 +685,23 @@ viewPin state signals pin =
     let
         nonport =
             case isPort pin.pad of
-                False -> [div [ class (cls [Just "pin-signal", Just (Pad.toString pin.pad)]) ] [ div [ class "pin-label" ] [ text <| Pad.toString pin.pad ]]]
-                True -> []
-    in
-        div [ class "pin" ] <|
+                False ->
+                    [ div [ class (cls [ Just "pin-signal", Just (Pad.toString pin.pad) ]) ] [ div [ class "pin-label" ] [ text <| Pad.toString pin.pad ] ] ]
 
-            [ div [ class "pin-leg" ] [ div [ class "pin-label" ] [ text <| fromInt pin.position ] ] ]
-            ++
-            nonport
-            ++
-            map (viewPinSignal state) (padSignals pin.pad signals)
+                True ->
+                    []
+    in
+    div [ class "pin" ] <|
+        [ div [ class "pin-leg" ] [ div [ class "pin-label" ] [ text <| fromInt pin.position ] ] ]
+            ++ nonport
+            ++ map (viewPinSignal state) (padSignals pin.pad signals)
 
 
 cls : List (Maybe String) -> String
 cls xs =
     filterMap identity xs
         |> join " "
+
 
 viewModuleSelectCheckbox : DefinitionState -> DeviceModuleCategory -> Html Msg
 viewModuleSelectCheckbox state category =
@@ -644,7 +744,7 @@ viewChip state cdef signals =
     in
     case state.pinout.pinoutType of
         SOIC ->
-            div [ id "chip-container", onClick (SetHighlight NoHighlight)]
+            div [ id "chip-container", onClick (SetHighlight NoHighlight) ]
                 [ viewModuleSelect state
                 , div [ id "chip-view", class "soic dark" ]
                     [ div [ class "soic-left" ] <| map (viewPin state leftSignals) (soicLeftPins state.pinout.pins)
@@ -656,26 +756,29 @@ viewChip state cdef signals =
                     ]
                 ]
 
+
 viewBitfield : Bitfield -> Html Msg
 viewBitfield bitfield =
-
     let
         range =
             case bitfield.mask of
                 BitIndex bit ->
                     "[Bit " ++ String.fromInt bit ++ "]"
+
                 BitRange high low ->
                     "[" ++ String.fromInt low ++ ":" ++ String.fromInt high ++ "]"
     in
-    div [ class "bitfield" ] <| [h4 [] [text <| bitfield.name ++ " " ++ range ++ " " ++ bitfield.caption]]
-    ++
-    render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" bitfield.description)
+    div [ class "bitfield" ] <|
+        [ h4 [] [ text <| bitfield.name ++ " " ++ range ++ " " ++ bitfield.caption ] ]
+            ++ render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" bitfield.description)
+
 
 bitfieldSorter : Bitfield -> Int
 bitfieldSorter field =
     case field.mask of
         BitIndex i ->
             i
+
         BitRange _ j ->
             j
 
@@ -683,71 +786,90 @@ bitfieldSorter field =
 viewRegister : Register -> Html Msg
 viewRegister register =
     div [ class "register" ] <|
-        [ h3 [] [text register.name]]
-        ++ render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" register.description)
-        ++ case register.bitfields of
-            Nothing ->
-                [text "No bitfields"]
-            Just bitfields ->
-                map viewBitfield (List.sortBy bitfieldSorter bitfields)
+        [ h3 [] [ text register.name ] ]
+            ++ render (defaultHtmlRenderer Nothing Nothing) (Maybe.withDefault "" register.description)
+            ++ (case register.bitfields of
+                    Nothing ->
+                        [ text "No bitfields" ]
 
+                    Just bitfields ->
+                        map viewBitfield (List.sortBy bitfieldSorter bitfields)
+               )
 
 
 viewRegisterGroup : Bool -> RegisterGroup -> Html Msg
 viewRegisterGroup caption registerGroup =
     let
-        registers = map viewRegister registerGroup.registers
+        registers =
+            map viewRegister registerGroup.registers
     in
     case caption of
         True ->
-            div [ class "register-group"] <| [ div [] [ text registerGroup.caption]] ++ registers
+            div [ class "register-group" ] <| [ div [] [ text registerGroup.caption ] ] ++ registers
+
         False ->
-            div [ class "register-group"] <| registers
+            div [ class "register-group" ] <| registers
+
+
 
 -- note on signal logic
 -- group by "function"
 -- name by "group" + index (if contains more than 1!)
+
+
 viewModule : DefinitionState -> Module -> List (Html Msg)
 viewModule state module_ =
     let
-        chipModules = filter (\m -> m.name == module_) state.chipDefinition.modules
+        chipModules =
+            filter (\m -> m.name == module_) state.chipDefinition.modules
     in
     case chipModules of
-        chipModule::_ ->
-             [h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
-             ++
-             case chipModule.registerGroups of
-                 Just registerGroups ->
-                     let
-                         captionGroup =
-                             case length registerGroups of
-                                 1 -> False
+        chipModule :: _ ->
+            [ h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption ] ]
+                ++ (case chipModule.registerGroups of
+                        Just registerGroups ->
+                            let
+                                captionGroup =
+                                    case length registerGroups of
+                                        1 ->
+                                            False
 
-                                 _ -> True
+                                        _ ->
+                                            True
 
-                         overview = div [class "module-overview"] [viewModuleOverviewTable chipModule registerGroups]
-                     in
-                     -- TODO sort these based on register/bitfield highlight!
-                     overview :: map (lazy2 viewRegisterGroup captionGroup) registerGroups
-                 Nothing ->
-                     [ text "No registers"]
+                                overview =
+                                    div [ class "module-overview" ] [ viewModuleOverviewTable chipModule registerGroups ]
+                            in
+                            -- TODO sort these based on register/bitfield highlight!
+                            overview :: map (lazy2 viewRegisterGroup captionGroup) registerGroups
+
+                        Nothing ->
+                            [ text "No registers" ]
+                   )
 
         [] ->
-            [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString module_]
+            [ text <| "No matching ChipModule found for DeviceModule " ++ Module.toString module_ ]
+
+
 viewModuleInfo : DefinitionState -> ChipCdef -> Html Msg
 viewModuleInfo state cdef =
-    div [id "module-info"] <|
+    div [ id "module-info" ] <|
         case state.highlight of
             NoHighlight ->
-                [viewModulesOverview state]
+                [ viewModulesOverview state ]
+
             ModuleHoverHighlight _ ->
-                [viewModulesOverview state]
+                [ viewModulesOverview state ]
+
             ModuleSelectHighlight module_ _ ->
                 viewModule state module_
+
             RegisterHighlight _ module_ ->
                 viewModule state module_
+
             BitfieldHighlight _ _ module_ ->
                 viewModule state module_
+
             SignalHighlight _ module_ ->
                 viewModule state module_
 
@@ -755,13 +877,16 @@ viewModuleInfo state cdef =
 flexBasis : Int -> List (Attribute Msg)
 flexBasis basis =
     let
-        basis_ = fromInt basis
+        basis_ =
+            fromInt basis
     in
-    [style "flex-basis" (basis_ ++ "px"), style "flex-grow" basis_]
+    [ style "flex-basis" (basis_ ++ "px"), style "flex-grow" basis_ ]
+
 
 colSpan : Int -> Attribute Msg
 colSpan length =
     Html.Attributes.colspan length
+
 
 gridSpan : Int -> Attribute Msg
 gridSpan length =
@@ -774,37 +899,45 @@ viewBitfieldByte deviceModule register bitfieldByte =
         BitfieldByte byte bitfields ->
             map (viewBitfieldOverview deviceModule register byte) (fillBitfieldGaps byte bitfields)
 
+
 viewBitfieldOverview : Module -> Register -> Int -> BitfieldOverview -> Html Msg
 viewBitfieldOverview deviceModule register byte bitfieldOverview =
     case bitfieldOverview of
         JustBitfield bitfield ->
-            Html.div [ class "bitfield-overview"
-                     , gridSpan (bitLength bitfield.mask)
-                     , onClick <| SetHighlight <| BitfieldHighlight bitfield register deviceModule
-                     ] <|
+            Html.div
+                [ class "bitfield-overview"
+                , gridSpan (bitLength bitfield.mask)
+                , onClick <| SetHighlight <| BitfieldHighlight bitfield register deviceModule
+                ]
+            <|
                 case bitfield.mask of
                     BitIndex index ->
-                        [text bitfield.name]
+                        [ text bitfield.name ]
+
                     BitRange high low ->
-                        [text <| bitfield.name ++ "[" ++ fromInt high ++ ":" ++ fromInt low ++ "]"]
+                        [ text <| bitfield.name ++ "[" ++ fromInt high ++ ":" ++ fromInt low ++ "]" ]
+
         BlankBitfield length ->
-            Html.div [ class "bitfield-overview blank-bitfield", gridSpan length] [text ""]
+            Html.div [ class "bitfield-overview blank-bitfield", gridSpan length ] [ text "" ]
 
 
-type BitfieldOverview =
-    JustBitfield Bitfield | BlankBitfield Int
+type BitfieldOverview
+    = JustBitfield Bitfield
+    | BlankBitfield Int
 
 
-fillBitfieldGapsHelper : (Int, Int) -> List Bitfield -> List (BitfieldOverview)
-fillBitfieldGapsHelper (lastIndex, minIndex) bitfields =
+fillBitfieldGapsHelper : ( Int, Int ) -> List Bitfield -> List BitfieldOverview
+fillBitfieldGapsHelper ( lastIndex, minIndex ) bitfields =
     let
         createBlank : Int -> Int -> List BitfieldOverview
         createBlank high low =
             let
-                blankLength = high - low - 1
+                blankLength =
+                    high - low - 1
             in
-            if (blankLength > 0) then
-                [BlankBitfield blankLength]
+            if blankLength > 0 then
+                [ BlankBitfield blankLength ]
+
             else
                 []
     in
@@ -812,90 +945,129 @@ fillBitfieldGapsHelper (lastIndex, minIndex) bitfields =
         field :: otherFields ->
             case field.mask of
                 BitIndex index ->
-                    createBlank lastIndex index ++ JustBitfield field :: fillBitfieldGapsHelper (index, minIndex) otherFields
+                    createBlank lastIndex index ++ JustBitfield field :: fillBitfieldGapsHelper ( index, minIndex ) otherFields
+
                 BitRange high low ->
-                    createBlank lastIndex high ++ JustBitfield field :: fillBitfieldGapsHelper (low, minIndex) otherFields
+                    createBlank lastIndex high ++ JustBitfield field :: fillBitfieldGapsHelper ( low, minIndex ) otherFields
+
         [] ->
             createBlank lastIndex minIndex
+
+
+
 -- datasheet is high byte to low byte, so use the same
-fillBitfieldGaps : Int -> List Bitfield -> List (BitfieldOverview)
+
+
+fillBitfieldGaps : Int -> List Bitfield -> List BitfieldOverview
 fillBitfieldGaps byte bitfields =
     let
-        multiplier = byte + 1
+        multiplier =
+            byte + 1
+
         -- eg (8, -1)
-        initialIndex = (multiplier * 8, multiplier * 8 - 9)
+        initialIndex =
+            ( multiplier * 8, multiplier * 8 - 9 )
     in
     fillBitfieldGapsHelper initialIndex (List.reverse <| List.sortBy bitfieldSorter bitfields)
 
-type BitfieldByte = BitfieldByte Int (List Bitfield)
+
+type BitfieldByte
+    = BitfieldByte Int (List Bitfield)
+
 
 splitBitfieldBytes : List Bitfield -> List BitfieldByte
 splitBitfieldBytes bitfields =
     let
-        fieldBytes = List.map (\f -> (maskByte f.mask, f)) bitfields
-        bytes = List.sort <| Set.toList <| Set.fromList <| List.map first fieldBytes
+        fieldBytes =
+            List.map (\f -> ( maskByte f.mask, f )) bitfields
+
+        bytes =
+            List.sort <| Set.toList <| Set.fromList <| List.map first fieldBytes
     in
     List.map (\b -> BitfieldByte b <| List.map second <| List.filter (\fb -> first fb == b) fieldBytes) bytes
+
 
 viewRegisterOverview : Module -> Register -> List (Html Msg)
 viewRegisterOverview deviceModule register =
     case register.bitfields of
         Just bitfields ->
-            concat <| map (\bitfieldByte -> div [class "bitfield-overview register-name"
-                                                , onClick <| SetHighlight <| RegisterHighlight register deviceModule
-                                                ] [text register.name] :: viewBitfieldByte deviceModule register bitfieldByte) <| splitBitfieldBytes bitfields
+            concat <|
+                map
+                    (\bitfieldByte ->
+                        div
+                            [ class "bitfield-overview register-name"
+                            , onClick <| SetHighlight <| RegisterHighlight register deviceModule
+                            ]
+                            [ text register.name ]
+                            :: viewBitfieldByte deviceModule register bitfieldByte
+                    )
+                <|
+                    splitBitfieldBytes bitfields
+
         Nothing ->
-            [Html.div [] [text "No bitfields"]]
+            [ Html.div [] [ text "No bitfields" ] ]
+
 
 viewRegisterGroupOverivew : Module -> RegisterGroup -> List (Html Msg)
 viewRegisterGroupOverivew deviceModule registerGroup =
     concat <| map (viewRegisterOverview deviceModule) registerGroup.registers
 
+
 viewRegisterFieldHeader : List (Html Msg)
 viewRegisterFieldHeader =
     let
-        template = Html.div [class "bitfield-overview bitfield-header"]
+        template =
+            Html.div [ class "bitfield-overview bitfield-header" ]
     in
-    template [text "Field"] :: map (\i -> template [text <| fromInt i]) (List.reverse <| List.range 0 7)
+    template [ text "Field" ] :: map (\i -> template [ text <| fromInt i ]) (List.reverse <| List.range 0 7)
 
 
 viewModuleOverviewTable : ChipModule -> List RegisterGroup -> Html Msg
 viewModuleOverviewTable chipModule registerGroups =
-    div [ class "bitfield-grid"] (viewRegisterFieldHeader ++ (concat <| map (viewRegisterGroupOverivew chipModule.name) registerGroups))
+    div [ class "bitfield-grid" ] (viewRegisterFieldHeader ++ (concat <| map (viewRegisterGroupOverivew chipModule.name) registerGroups))
 
 
 viewModuleOverview : ChipModule -> Maybe (Html Msg)
 viewModuleOverview chipModule =
     case chipModule.registerGroups of
         Just registerGroups ->
-            Just <| div [ class "module-overview" ] <|
-                [ h3 [onClick <| SetHighlight <| ModuleSelectHighlight chipModule.name chipModule.name] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]
-                , viewModuleOverviewTable chipModule registerGroups
-                ]
+            Just <|
+                div [ class "module-overview" ] <|
+                    [ h3 [ onClick <| SetHighlight <| ModuleSelectHighlight chipModule.name chipModule.name ] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption ]
+                    , viewModuleOverviewTable chipModule registerGroups
+                    ]
 
         Nothing ->
             Nothing
 
+
 viewModulesOverview : DefinitionState -> Html Msg
 viewModulesOverview state =
     let
-        modules = filter (\m -> member m.group state.visibleModules) state.chipDefinition.modules
+        modules =
+            filter (\m -> member m.group state.visibleModules) state.chipDefinition.modules
     in
-    lazy (\modules_ -> div [ class "modules-overview" ] <| [h2 [] [text "Modules overview"]] ++ filterMap viewModuleOverview modules_) modules
+    lazy (\modules_ -> div [ class "modules-overview" ] <| [ h2 [] [ text "Modules overview" ] ] ++ filterMap viewModuleOverview modules_) modules
+
 
 viewChipSelect : DefinitionState -> Html Msg
 viewChipSelect state =
     div []
-        [ a [href "#", onClick <| LoadDevice "ATtiny202"] [ text "ATtiny202" ]
+        [ a [ href "#", onClick <| LoadDevice "ATtiny202" ] [ text "ATtiny202" ]
         , text " | "
-        , a [href "#", onClick <| LoadDevice "ATtiny814"] [ text "ATtiny814" ]
+        , a [ href "#", onClick <| LoadDevice "ATtiny814" ] [ text "ATtiny814" ]
         ]
+
 
 debugR : Result String (List (Html Msg)) -> List (Html Msg)
 debugR r =
     case r of
-        Ok x -> x
-        Err err -> [div [] [text err]]
+        Ok x ->
+            x
+
+        Err err ->
+            [ div [] [ text err ] ]
+
 
 render : Renderer (Html Msg) -> String -> List (Html Msg)
 render renderer markdown =
@@ -904,7 +1076,10 @@ render renderer markdown =
         |> Result.mapError deadEndsToString
         |> Result.andThen (\ast -> Markdown.Renderer.render renderer ast)
         |> debugR
-        --|> Result.withDefault [text "Markdown render failed"]
+
+
+
+--|> Result.withDefault [text "Markdown render failed"]
 
 
 deadEndsToString deadEnds =
@@ -912,47 +1087,54 @@ deadEndsToString deadEnds =
         |> List.map Markdown.Parser.deadEndToString
         |> String.join "\n"
 
+
+
 -- TODO CHECK OUT https://package.elm-lang.org/packages/lazamar/dict-parser/latest/Parser-Dict for faster code parsing
+
 
 viewSubSection : List Tome.Document -> ChipCdef -> SubSection -> Html Msg
 viewSubSection documents cdef subSection =
-    div [ class "subsection"] <|
-        [ h3 [] [text subSection.title]]
-        ++
-        render (defaultHtmlRenderer (Just cdef) (Just documents)) subSection.body
+    div [ class "subsection" ] <|
+        [ h3 [] [ text subSection.title ] ]
+            ++ render (defaultHtmlRenderer (Just cdef) (Just documents)) subSection.body
+
 
 viewSection : List Tome.Document -> ChipCdef -> Section -> Html Msg
 viewSection documents cdef section =
-    div [ class "section"] <|
-        [ h2 [] [text section.title]]
-        ++
-        render (defaultHtmlRenderer (Just cdef) (Just documents)) section.body
-        ++
-        List.map (viewSubSection documents cdef) section.subSections
+    div [ class "section" ] <|
+        [ h2 [] [ text section.title ] ]
+            ++ render (defaultHtmlRenderer (Just cdef) (Just documents)) section.body
+            ++ List.map (viewSubSection documents cdef) section.subSections
+
 
 viewChapter : ChipCdef -> Chapter -> Html Msg
 viewChapter cdef chapter =
     -- TODO some kind of logic to determine what topic we want to show
     div [] <| List.map (viewSection chapter.documents cdef) chapter.sections
 
+
 viewTome : DefinitionState -> ChipCdef -> Tome -> Html Msg
 viewTome state cdef tome =
     let
-        maybeAlias = Dict.get state.device.name tome.aliases
+        maybeAlias =
+            Dict.get state.device.name tome.aliases
     in
     case maybeAlias of
         Just alias ->
             let
-                chapter = List.filter (\c -> c.title == alias) tome.chapters
+                chapter =
+                    List.filter (\c -> c.title == alias) tome.chapters
             in
-            div [id "tome"] <|
+            div [ id "tome" ] <|
                 case chapter of
-                    [c] ->
-                        [lazy2 viewChapter cdef c]
+                    [ c ] ->
+                        [ lazy2 viewChapter cdef c ]
+
                     _ ->
-                        [text "Selected device has invalid documentation alias"]
+                        [ text "Selected device has invalid documentation alias" ]
+
         Nothing ->
-            div [] [text "Selected device has no extra documentation."]
+            div [] [ text "Selected device has no extra documentation." ]
 
 
 viewModel : Model -> Html Msg
@@ -960,8 +1142,8 @@ viewModel model =
     case model of
         RequestFailed _ error ->
             div []
-                [ text "Unable to load device definition: ",
-                case error of
+                [ text "Unable to load device definition: "
+                , case error of
                     BadBody message ->
                         text <| "Decoding error:" ++ message
 
@@ -978,12 +1160,16 @@ viewModel model =
                         text <| "Bad status response:" ++ fromInt statusCode
                 , button [ onClick <| LoadDevice "ATtiny202" ] [ text "Try Again!" ]
                 ]
+
         ParsingTomeFailed _ error ->
-            div [] <| [ text ("Parsing Tome failed: " ++ (parserDeadEndsToString error))]
+            div [] <| [ text ("Parsing Tome failed: " ++ parserDeadEndsToString error) ]
+
         InsufficientData _ reason ->
-            div [] [ text "Received device definition is invalid: "
-                   , text reason
-                   ]
+            div []
+                [ text "Received device definition is invalid: "
+                , text reason
+                ]
+
         Loading _ _ _ _ ->
             text "Loading..."
 
@@ -991,15 +1177,13 @@ viewModel model =
             div []
                 [ div []
                     [ viewChipSelect state
-                    , viewChip state cdef  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
-                    , div [id "info-row"]
-                         [ viewModuleInfo state cdef
-                         , viewTome state cdef tome
-                         ]
+                    , viewChip state cdef (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
+                    , div [ id "info-row" ]
+                        [ viewModuleInfo state cdef
+                        , viewTome state cdef tome
+                        ]
                     ]
                 ]
-
-
 
 
 getDefinition : String -> String -> Cmd Msg
@@ -1017,7 +1201,8 @@ getCDEF root definitionId =
         , expect = Http.expectJson ReceiveCDEF chipCDEFDecoder
         }
 
-getTome : String  -> Cmd Msg
+
+getTome : String -> Cmd Msg
 getTome root =
     Http.get
         { url = root ++ "data/tome.md"
