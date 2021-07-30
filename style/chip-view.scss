@@ -267,9 +267,6 @@ h3, h4 {
     flex-grow: 1;
     padding-right: 4px;
     border-right: 1px solid #b5e853;
-    .bitfield {
-      padding-left: 20px;
-    }
 
     .modules-overview,
     .module-overview {
@@ -294,6 +291,12 @@ h3, h4 {
           height: 19px;
           justify-content: center;
           box-shadow:0 0 0 1px $table-border-color;
+          &.bitfield-selected,
+          &.register-selected,
+          &.register-related {
+            background-color: $link-yellow;
+            color: black;
+          }
           &.overview-highlight {
             &.register-name {
               background-color: $link-yellow;
@@ -303,66 +306,11 @@ h3, h4 {
               background-color: $link-yellow;
             }
           }
-          &:not(.blank-bitfield) {
-            &:hover {
-              cursor: pointer;
-            }
-          }
         }
         .blank-bitfield {
           background-color: #151e04;
         }
       }
-      /*
-      .register-overview-header {
-        color: #b5e853;
-        font-weight: bold;
-        background-color: #151e04;
-      }
-
-       */
-      /*
-      .register-overview-row {
-        display: flex;
-        border-top: $table-border;
-        &:last-child {
-          border-bottom: $table-border;
-        }
-        .bitfield-overview {
-          display: flex;
-          justify-content: center;
-          border-left: $table-border;
-          &:last-child {
-            border-right: $table-border;
-          }
-        }
-        .blank-bitfield {
-          background-color: #151e04;
-        }
-      }
-
-       */
-      /*
-      .register-overview {
-        display: flex;
-        flex-direction: row;
-        > div {
-          flex-grow: 1;
-        }
-        border-top: 1px solid white;
-        &:last-child {
-          border-bottom: 1px solid white;
-        }
-        .bitfield-overview {
-          display: flex;
-          justify-content: center;
-          border-left: 1px solid white;
-          &:last-child {
-            border-right: 1px solid white;
-          }
-        }
-      }
-       */
     }
   }
   #tome {
