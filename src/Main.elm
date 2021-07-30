@@ -16,7 +16,7 @@ import Dict.Extra exposing (groupBy)
 import Html exposing (Attribute, Html, a, button, div, h2, h3, h4, input, label, text)
 import Html.Attributes exposing (checked, class, href, id, style, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
-import Html.Lazy exposing (lazy, lazy2)
+import Html.Lazy exposing (lazy, lazy2, lazy3)
 import Http exposing (Error(..))
 import Json.Decode as Decoder
 import Json.Encode
@@ -30,7 +30,7 @@ import String exposing (fromInt, join, replace)
 import Tuple exposing (first, second)
 import Url
 import Util exposing (findOne)
-import Util.BitMask exposing (BitMask(..), bitLength, maskByte)
+import Util.BitMask exposing (BitMask(..), bitLength, columnOverlapsBitMask, maskByte, masksOverlap)
 import Util.ParserUtil exposing (parserDeadEndsToString)
 
 
@@ -66,7 +66,7 @@ type alias DefinitionState =
     , pinout : ChipPinout
     , visibleModules : List DeviceModuleCategory
     , highlight : HighlightMode
-    , highlightRelatedCategories : List DeviceModuleCategory
+    , overviewHighlight : Maybe OverviewHighlight
     }
 
 
@@ -81,6 +81,10 @@ type HighlightMode
     | ModuleSelectHighlight Module Module -- second module can be used to temporarily override selected
     | RegisterHighlight Register Module
     | BitfieldHighlight Bitfield Register Module
+
+
+type OverviewHighlight
+    = OverviewHighlight Module Register BitMask
 
 
 
@@ -145,6 +149,7 @@ type Msg
     | ReceiveTome (Result Http.Error String)
     | ToggleVisibleCategory DeviceModuleCategory
     | SetHighlight HighlightMode
+    | SetOverviewHighlight (Maybe OverviewHighlight)
 
 
 
@@ -280,7 +285,7 @@ update msg model =
                                                                     [ IO, ANALOG, INTERFACE, TIMER, OTHER ]
 
                                                         definition =
-                                                            DefinitionState chipDefinition variant device pinout visibleModules NoHighlight []
+                                                            DefinitionState chipDefinition variant device pinout visibleModules NoHighlight Nothing
                                                     in
                                                     case ( maybeCdef, maybeTome ) of
                                                         ( Just cdef, Just tome ) ->
@@ -341,6 +346,9 @@ update msg model =
 
                 SetHighlight highlightMode ->
                     ( Success session { definition | highlight = highlightMode } cdef tome, Cmd.none )
+
+                SetOverviewHighlight maybeOverviewHighlight ->
+                    ( Success session { definition | overviewHighlight = maybeOverviewHighlight } cdef tome, Cmd.none )
 
                 _ ->
                     updateGeneric msg model
@@ -797,8 +805,9 @@ viewRegister register =
                )
 
 
-viewRegisterGroup : Bool -> RegisterGroup -> Html Msg
-viewRegisterGroup caption registerGroup =
+viewRegisterGroup : Bool -> Maybe OverviewHighlight -> RegisterGroup -> Html Msg
+viewRegisterGroup caption _ registerGroup =
+    -- OverviewHighlight is here simply because of Html.lazy
     let
         registers =
             map viewRegister registerGroup.registers
@@ -838,10 +847,10 @@ viewModule state module_ =
                                             True
 
                                 overview =
-                                    div [ class "module-overview" ] [ viewModuleOverviewTable chipModule registerGroups ]
+                                    div [ class "module-overview" ] [ viewModuleOverviewTable state.overviewHighlight chipModule registerGroups ]
                             in
                             -- TODO sort these based on register/bitfield highlight!
-                            overview :: map (lazy2 viewRegisterGroup captionGroup) registerGroups
+                            overview :: map (lazy3 viewRegisterGroup captionGroup state.overviewHighlight) registerGroups
 
                         Nothing ->
                             [ text "No registers" ]
@@ -893,22 +902,46 @@ gridSpan length =
     style "grid-column-end" <| "span " ++ fromInt length
 
 
-viewBitfieldByte : Module -> Register -> BitfieldByte -> List (Html Msg)
-viewBitfieldByte deviceModule register bitfieldByte =
+viewBitfieldByte : Maybe OverviewHighlight -> Module -> Register -> BitfieldByte -> List (Html Msg)
+viewBitfieldByte overviewHighlight deviceModule register bitfieldByte =
     case bitfieldByte of
         BitfieldByte byte bitfields ->
-            map (viewBitfieldOverview deviceModule register byte) (fillBitfieldGaps byte bitfields)
+            map (viewBitfieldOverview overviewHighlight deviceModule register byte) (fillBitfieldGaps byte bitfields)
 
 
-viewBitfieldOverview : Module -> Register -> Int -> BitfieldOverview -> Html Msg
-viewBitfieldOverview deviceModule register byte bitfieldOverview =
+bitfieldOverviewHighlightClass : Maybe OverviewHighlight -> Module -> Register -> Bitfield -> List (Attribute a)
+bitfieldOverviewHighlightClass maybeOverviewHighlight module_ register bitfield =
+    case maybeOverviewHighlight of
+        Just overviewHighlight ->
+            case overviewHighlight of
+                OverviewHighlight highlightedModule highlightedRegister highlightedBitmask ->
+                    if module_ == highlightedModule then
+                        if register == highlightedRegister || masksOverlap bitfield.mask highlightedBitmask then
+                            [ class "overview-highlight" ]
+
+                        else
+                            []
+
+                    else
+                        []
+
+        Nothing ->
+            []
+
+
+viewBitfieldOverview : Maybe OverviewHighlight -> Module -> Register -> Int -> BitfieldOverview -> Html Msg
+viewBitfieldOverview maybeOverviewHighlight module_ register byte bitfieldOverview =
     case bitfieldOverview of
         JustBitfield bitfield ->
             Html.div
-                [ class "bitfield-overview"
-                , gridSpan (bitLength bitfield.mask)
-                , onClick <| SetHighlight <| BitfieldHighlight bitfield register deviceModule
-                ]
+                ([ class "bitfield-overview"
+                 , gridSpan (bitLength bitfield.mask)
+                 , onClick <| SetHighlight <| BitfieldHighlight bitfield register module_
+                 , onMouseEnter <| SetOverviewHighlight <| Just <| OverviewHighlight module_ register bitfield.mask
+                 , onMouseLeave <| SetOverviewHighlight <| Nothing
+                 ]
+                 --++ bitfieldOverviewHighlightClass maybeOverviewHighlight module_ register bitfield
+                )
             <|
                 case bitfield.mask of
                     BitIndex index ->
@@ -987,19 +1020,35 @@ splitBitfieldBytes bitfields =
     List.map (\b -> BitfieldByte b <| List.map second <| List.filter (\fb -> first fb == b) fieldBytes) bytes
 
 
-viewRegisterOverview : Module -> Register -> List (Html Msg)
-viewRegisterOverview deviceModule register =
+viewRegisterOverview : Maybe OverviewHighlight -> Module -> Register -> List (Html Msg)
+viewRegisterOverview overviewHighlight deviceModule register =
+    let
+        overviewHighlightClass : Maybe OverviewHighlight -> Register -> List (Attribute a)
+        overviewHighlightClass maybeOverviewHighlight register_ =
+            case maybeOverviewHighlight of
+                Just (OverviewHighlight _ highlightedRegister _) ->
+                    if highlightedRegister == register_ then
+                        [ class "overview-highlight" ]
+
+                    else
+                        []
+
+                Nothing ->
+                    []
+    in
     case register.bitfields of
         Just bitfields ->
             concat <|
                 map
                     (\bitfieldByte ->
                         div
-                            [ class "bitfield-overview register-name"
-                            , onClick <| SetHighlight <| RegisterHighlight register deviceModule
-                            ]
+                            ([ class "bitfield-overview register-name link"
+                             , onClick <| SetHighlight <| RegisterHighlight register deviceModule
+                             ]
+                                ++ overviewHighlightClass overviewHighlight register
+                            )
                             [ text register.name ]
-                            :: viewBitfieldByte deviceModule register bitfieldByte
+                            :: viewBitfieldByte overviewHighlight deviceModule register bitfieldByte
                     )
                 <|
                     splitBitfieldBytes bitfields
@@ -1008,33 +1057,50 @@ viewRegisterOverview deviceModule register =
             [ Html.div [] [ text "No bitfields" ] ]
 
 
-viewRegisterGroupOverivew : Module -> RegisterGroup -> List (Html Msg)
-viewRegisterGroupOverivew deviceModule registerGroup =
-    concat <| map (viewRegisterOverview deviceModule) registerGroup.registers
+viewRegisterGroupOverivew : Maybe OverviewHighlight -> Module -> RegisterGroup -> List (Html Msg)
+viewRegisterGroupOverivew overviewHighlight deviceModule registerGroup =
+    concat <| map (viewRegisterOverview overviewHighlight deviceModule) registerGroup.registers
 
 
-viewRegisterFieldHeader : List (Html Msg)
-viewRegisterFieldHeader =
+viewRegisterFieldHeader : Maybe OverviewHighlight -> Module -> List (Html Msg)
+viewRegisterFieldHeader maybeOverviewHighlight module_ =
     let
-        template =
-            Html.div [ class "bitfield-overview bitfield-header" ]
+        overviewHighlightClass : Int -> List (Attribute a)
+        overviewHighlightClass i =
+            case maybeOverviewHighlight of
+                Just (OverviewHighlight highlightedModule _ highlightedBitmask) ->
+                    if highlightedModule == module_ && columnOverlapsBitMask i highlightedBitmask then
+                        [ class "overview-highlight" ]
+
+                    else
+                        []
+
+                Nothing ->
+                    []
+
+        template i =
+            Html.div ([ class "bitfield-overview bitfield-header" ] ++ overviewHighlightClass i) [ text <| fromInt i ]
     in
-    template [ text "Field" ] :: map (\i -> template [ text <| fromInt i ]) (List.reverse <| List.range 0 7)
+    Html.div [ class "bitfield-overview bitfield-header" ] [ text "Field" ] :: map template (List.reverse <| List.range 0 7)
 
 
-viewModuleOverviewTable : ChipModule -> List RegisterGroup -> Html Msg
-viewModuleOverviewTable chipModule registerGroups =
-    div [ class "bitfield-grid" ] (viewRegisterFieldHeader ++ (concat <| map (viewRegisterGroupOverivew chipModule.name) registerGroups))
+viewModuleOverviewTable : Maybe OverviewHighlight -> ChipModule -> List RegisterGroup -> Html Msg
+viewModuleOverviewTable overviewHighlight chipModule registerGroups =
+    div [ class "bitfield-grid" ] (viewRegisterFieldHeader overviewHighlight chipModule.name ++ (concat <| map (viewRegisterGroupOverivew overviewHighlight chipModule.name) registerGroups))
 
 
-viewModuleOverview : ChipModule -> Maybe (Html Msg)
-viewModuleOverview chipModule =
+viewModuleOverview : Maybe OverviewHighlight -> ChipModule -> Maybe (Html Msg)
+viewModuleOverview overviewHighlight chipModule =
     case chipModule.registerGroups of
         Just registerGroups ->
             Just <|
                 div [ class "module-overview" ] <|
-                    [ h3 [ onClick <| SetHighlight <| ModuleSelectHighlight chipModule.name chipModule.name ] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption ]
-                    , viewModuleOverviewTable chipModule registerGroups
+                    [ h3
+                        [ class "link"
+                        , onClick <| SetHighlight <| ModuleSelectHighlight chipModule.name chipModule.name
+                        ]
+                        [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption ]
+                    , viewModuleOverviewTable overviewHighlight chipModule registerGroups
                     ]
 
         Nothing ->
@@ -1047,7 +1113,13 @@ viewModulesOverview state =
         modules =
             filter (\m -> member m.group state.visibleModules) state.chipDefinition.modules
     in
-    lazy (\modules_ -> div [ class "modules-overview" ] <| [ h2 [] [ text "Modules overview" ] ] ++ filterMap viewModuleOverview modules_) modules
+    lazy
+        (\( modules_, overviewHighlight ) ->
+            div [ class "modules-overview" ] <|
+                [ h2 [] [ text "Modules overview" ] ]
+                    ++ filterMap (viewModuleOverview overviewHighlight) modules_
+        )
+        ( modules, state.overviewHighlight )
 
 
 viewChipSelect : DefinitionState -> Html Msg

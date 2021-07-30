@@ -16,7 +16,10 @@ h2 {
 
 .link {
   color: $link-yellow;
-  text-decoration: underline;
+  &:hover {
+    text-decoration: underline;
+    cursor: pointer;
+  }
 }
 #chip-container {
   display: flex;
@@ -280,9 +283,7 @@ h3, h4 {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
         grid-gap: 1px;
-        .register-name {
-          color: $lovely-green;
-        }
+
         .bitfield-header {
           background-color: $lovely-green;
           color: black;
@@ -292,21 +293,35 @@ h3, h4 {
           display: flex;
           height: 19px;
           justify-content: center;
-          //border: $table-border;
           box-shadow:0 0 0 1px $table-border-color;
-          //border-collapse: collapse;
-          //box-sizing: border-box;
+          &.overview-highlight {
+            &.register-name {
+              background-color: $link-yellow;
+              color: black;
+            }
+            &.bitfield-header {
+              background-color: $link-yellow;
+            }
+          }
+          &:not(.blank-bitfield) {
+            &:hover {
+              cursor: pointer;
+            }
+          }
         }
         .blank-bitfield {
           background-color: #151e04;
         }
       }
-
+      /*
       .register-overview-header {
         color: #b5e853;
         font-weight: bold;
         background-color: #151e04;
       }
+
+       */
+      /*
       .register-overview-row {
         display: flex;
         border-top: $table-border;
@@ -325,6 +340,8 @@ h3, h4 {
           background-color: #151e04;
         }
       }
+
+       */
       /*
       .register-overview {
         display: flex;

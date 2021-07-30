@@ -66,11 +66,37 @@ type BitMask
     | BitRange Int Int
 
 
+maskToRangeTuple : BitMask -> ( Int, Int )
+maskToRangeTuple bitmask =
+    case bitmask of
+        BitIndex i ->
+            ( i, i )
+
+        BitRange high low ->
+            ( modBy 8 high, modBy 8 low )
+
+
+masksOverlap : BitMask -> BitMask -> Bool
+masksOverlap a b =
+    overlaps (maskToRangeTuple a) (maskToRangeTuple b)
+
+
+columnOverlapsBitMask : Int -> BitMask -> Bool
+columnOverlapsBitMask column bitmask =
+    overlaps ( column, column ) (maskToRangeTuple bitmask)
+
+
+overlaps : ( Int, Int ) -> ( Int, Int ) -> Bool
+overlaps ( aHigh, aLow ) ( bHigh, bLow ) =
+    aLow <= bHigh && bLow <= aHigh
+
+
 maskByte : BitMask -> Int
 maskByte mask =
     case mask of
         BitIndex index ->
             index // 8
+
         BitRange _ low ->
             low // 8
 
@@ -78,13 +104,15 @@ maskByte mask =
 bitRange : Bits -> Maybe BitMask
 bitRange (Bits list) =
     let
-        length = List.length list - 1
+        length =
+            List.length list - 1
+
         leftIndex =
             indexOfHighBitHelper list 0
                 |> Maybe.andThen (\x -> Just <| length - x)
+
         rightIndex =
             indexOfHighBitHelper (List.reverse list) 0
-
     in
     case ( leftIndex, rightIndex ) of
         ( Just left, Just right ) ->
@@ -98,12 +126,16 @@ bitRange (Bits list) =
         _ ->
             Nothing
 
+
 bitLength : BitMask -> Int
-bitLength bits  =
+bitLength bits =
     case bits of
-        BitIndex _ -> 1
+        BitIndex _ ->
+            1
+
         BitRange high low ->
             high - low + 1
+
 
 isHex : Char -> Bool
 isHex c =
