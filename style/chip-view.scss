@@ -2,11 +2,21 @@ $pin-width: 22px;
 $pin-length: 25px;
 $label-border-radius: 6px;
 $lovely-green: #b5e853;
+$link-yellow: #dce853;
 
 body {
   background: black;
-  color: #eaeaea;
+  //color: #a5a5a5;
+  color: #cccccc;
   font-family: Monaco,"Bitstream Vera Sans Mono","Lucida Console",Terminal,monospace;
+}
+h2 {
+  color: #eaeaea;
+}
+
+.link {
+  color: $link-yellow;
+  text-decoration: underline;
 }
 #chip-container {
   display: flex;
@@ -258,7 +268,8 @@ h3, h4 {
       padding-left: 20px;
     }
 
-    .modules-overview {
+    .modules-overview,
+    .module-overview {
       table {
         width: 100%;
       }

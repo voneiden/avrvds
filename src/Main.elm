@@ -14,7 +14,7 @@ import Data.Util.Pad as Pad
 import Dict exposing (Dict, keys)
 import Dict.Extra exposing (groupBy)
 import Html exposing (Attribute, Html, a, button, div, h2, h3, h4, input, label, text)
-import Html.Attributes exposing (checked, class, colspan, href, id, style, type_)
+import Html.Attributes exposing (checked, class, href, id, style, type_)
 import Html.Events exposing (onClick, onMouseEnter, onMouseLeave, stopPropagationOn)
 import Html.Lazy exposing (lazy, lazy2)
 import Http exposing (Error(..))
@@ -29,6 +29,7 @@ import Set
 import String exposing (fromInt, join, replace)
 import Tuple exposing (first, second)
 import Url
+import Util exposing (findOne)
 import Util.BitMask exposing (BitMask(..), bitLength, maskByte)
 import Util.ParserUtil exposing (parserDeadEndsToString)
 
@@ -64,10 +65,18 @@ type alias DefinitionState =
     , device: ChipDevice
     , pinout : ChipPinout
     , visibleModules : List DeviceModuleCategory
-    , highlightModule : Maybe Module
-    , selectedSignal : Maybe Signal
+    , highlight : HighlightMode
     , highlightRelatedCategories : List DeviceModuleCategory
     } -- TODO well CDEF can't go here can it now?
+
+
+type HighlightMode = NoHighlight
+                   | SignalHighlight Signal Module
+                   | ModuleHoverHighlight Module
+                   | ModuleSelectHighlight Module Module -- second module can be used to temporarily override selected
+                   | RegisterHighlight Register Module
+                   | BitfieldHighlight Bitfield Register Module
+    -- | RegisterHighlight Register Module | BitfieldHighlight Bitfield Module
 
 
 type Model
@@ -121,9 +130,7 @@ type Msg
     | ReceiveCDEF (Result Http.Error ChipCdef)
     | ReceiveTome (Result Http.Error String)
     | ToggleVisibleCategory DeviceModuleCategory
-    | HighlightModule Module
-    | SelectSignal (Maybe Signal)
-    | ClearHighlight
+    | SetHighlight HighlightMode
 
 
 -- PORTS
@@ -224,7 +231,7 @@ update msg model =
                                                                     List.filterMap DeviceModuleCategory.fromString list
                                                                 Nothing ->
                                                                     [ IO, ANALOG, INTERFACE, TIMER, OTHER ]
-                                                            definition = DefinitionState chipDefinition variant device pinout visibleModules Nothing Nothing []
+                                                            definition = DefinitionState chipDefinition variant device pinout visibleModules NoHighlight []
                                                         in
                                                         case (maybeCdef, maybeTome) of
                                                             (Just cdef, Just tome) ->
@@ -271,14 +278,8 @@ update msg model =
                     in
                     ( Success session { definition | visibleModules = newVisibleModules } cdef tome, storeVisibleModules (encodeVisibleModules newVisibleModules) )
 
-                HighlightModule category ->
-                    ( Success session { definition | highlightModule = Just category } cdef tome, Cmd.none )
-
-                ClearHighlight ->
-                    ( Success session { definition | highlightModule = Nothing } cdef tome, Cmd.none )
-
-                SelectSignal pin ->
-                    ( Success session { definition | selectedSignal = pin } cdef tome, Cmd.none)
+                SetHighlight highlightMode ->
+                    ( Success session { definition | highlight = highlightMode } cdef tome, Cmd.none )
 
                 _ ->
                     updateGeneric msg model
@@ -465,11 +466,18 @@ signalToString signal =
 
 highlightSignal : DefinitionState -> Signal -> Bool
 highlightSignal state signal =
-    case state.highlightModule of
-        Just c ->
-            signal.deviceModule == c
-
-        Nothing ->
+    case state.highlight of
+        SignalHighlight _ highlightedModule ->
+            signal.deviceModule == highlightedModule
+        ModuleHoverHighlight highlightedModule ->
+            signal.deviceModule == highlightedModule
+        ModuleSelectHighlight selectedModule highlightedModule ->
+            signal.deviceModule == highlightedModule || signal.deviceModule == selectedModule
+        RegisterHighlight _ highlightedModule ->
+            signal.deviceModule == highlightedModule
+        BitfieldHighlight _ _ highlightedModule ->
+            signal.deviceModule == highlightedModule
+        NoHighlight ->
             False
 
 highlightSignalClass : Bool -> Maybe String
@@ -478,18 +486,78 @@ highlightSignalClass highlight =
         True -> Just "highlight"
         False -> Nothing
 
+
+selectSignalClassByModule : Module -> Signal -> Maybe String
+selectSignalClassByModule deviceModule signal =
+    if signal.deviceModule == deviceModule then
+        Just "selected-related"
+    else
+        Just "selected-unrelated"
+
 selectSignalClass : DefinitionState -> Signal -> Maybe String
 selectSignalClass state signal =
-    case state.selectedSignal of
-        Just selectedSignal ->
-            if signal.deviceModule == selectedSignal.deviceModule then
-                if signal.function == selectedSignal.function then
+    case state.highlight of
+        SignalHighlight highlightedSignal _ ->
+            if signal.deviceModule == highlightedSignal.deviceModule then
+                if signal.function == highlightedSignal.function then
                     Just "selected"
                 else
                     Just "selected-related"
             else
                 Just "selected-unrelated"
-        Nothing -> Nothing
+        ModuleHoverHighlight highlightedModule ->
+            selectSignalClassByModule highlightedModule signal
+        ModuleSelectHighlight _ highlightedModule ->
+            selectSignalClassByModule highlightedModule signal
+        RegisterHighlight _ highlightedModule ->
+            selectSignalClassByModule highlightedModule signal
+        BitfieldHighlight _ _ highlightedModule ->
+            selectSignalClassByModule highlightedModule signal
+        NoHighlight ->
+            Nothing
+
+
+highlightModule : DefinitionState -> Module -> Msg
+highlightModule state deviceModule =
+    case state.highlight of
+        SignalHighlight highlightedSignal _ ->
+            SetHighlight <| SignalHighlight highlightedSignal deviceModule
+        RegisterHighlight highlightedRegister _ ->
+            SetHighlight <| RegisterHighlight highlightedRegister deviceModule
+        BitfieldHighlight highlightedBitfield highlightedRegister _ ->
+            SetHighlight <| BitfieldHighlight highlightedBitfield highlightedRegister deviceModule
+        ModuleHoverHighlight _ ->
+                SetHighlight <| ModuleHoverHighlight deviceModule
+        ModuleSelectHighlight selectedModule _ ->
+            SetHighlight <| ModuleSelectHighlight selectedModule deviceModule
+        NoHighlight ->
+            SetHighlight <| ModuleHoverHighlight deviceModule
+
+findModuleWithRegister : DefinitionState -> Register -> Maybe ChipModule
+findModuleWithRegister state register =
+    findOne (\m -> List.member register (concat <| List.map .registers <| Maybe.withDefault [] m.registerGroups)) state.chipDefinition.modules
+
+clearModuleHighlight : DefinitionState -> Msg
+clearModuleHighlight state =
+    case state.highlight of
+        SignalHighlight highlightedSignal _ ->
+            SetHighlight <| SignalHighlight highlightedSignal highlightedSignal.deviceModule
+        RegisterHighlight highlightedRegister _ ->
+            case findModuleWithRegister state highlightedRegister of
+                Just chipModule ->
+                    SetHighlight <| RegisterHighlight highlightedRegister chipModule.name
+                Nothing ->
+                    SetHighlight NoHighlight
+        BitfieldHighlight _ highlightedRegister _ ->
+            case findModuleWithRegister state highlightedRegister of
+                Just chipModule ->
+                    SetHighlight <| RegisterHighlight highlightedRegister chipModule.name
+                Nothing ->
+                    SetHighlight NoHighlight
+        ModuleSelectHighlight selectedModule _ ->
+            SetHighlight <| ModuleSelectHighlight selectedModule selectedModule
+        _ ->
+            SetHighlight <| NoHighlight
 
 
 viewPinSignal : DefinitionState -> Signal -> Html Msg
@@ -501,10 +569,10 @@ viewPinSignal state signal =
             , highlightSignalClass <| highlightSignal state signal
             , selectSignalClass state signal
             ]
-        , onMouseEnter <| HighlightModule signal.deviceModule
-        , onMouseLeave ClearHighlight
+        , onMouseEnter <| highlightModule state signal.deviceModule
+        , onMouseLeave <| clearModuleHighlight state
         --, onClick <| SelectSignal (Just signal)
-        , stopPropagationOn "click" (Decoder.succeed (SelectSignal (Just signal), True))
+        , stopPropagationOn "click" (Decoder.succeed (SetHighlight <| SignalHighlight signal signal.deviceModule, True))
         ]
         [
             div [ class "pin-label-wrapper"] [
@@ -576,7 +644,7 @@ viewChip state cdef signals =
     in
     case state.pinout.pinoutType of
         SOIC ->
-            div [ id "chip-container", onClick (SelectSignal Nothing)]
+            div [ id "chip-container", onClick (SetHighlight NoHighlight)]
                 [ viewModuleSelect state
                 , div [ id "chip-view", class "soic dark" ]
                     [ div [ class "soic-left" ] <| map (viewPin state leftSignals) (soicLeftPins state.pinout.pins)
@@ -639,35 +707,50 @@ viewRegisterGroup caption registerGroup =
 -- note on signal logic
 -- group by "function"
 -- name by "group" + index (if contains more than 1!)
-viewModule : DefinitionState -> ChipCdef -> Html Msg
-viewModule state cdef =
+viewModule : DefinitionState -> Module -> List (Html Msg)
+viewModule state module_ =
+    let
+        chipModules = filter (\m -> m.name == module_) state.chipDefinition.modules
+    in
+    case chipModules of
+        chipModule::_ ->
+             [h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
+             ++
+             case chipModule.registerGroups of
+                 Just registerGroups ->
+                     let
+                         captionGroup =
+                             case length registerGroups of
+                                 1 -> False
+
+                                 _ -> True
+
+                         overview = div [class "module-overview"] [viewModuleOverviewTable chipModule registerGroups]
+                     in
+                     -- TODO sort these based on register/bitfield highlight!
+                     overview :: map (lazy2 viewRegisterGroup captionGroup) registerGroups
+                 Nothing ->
+                     [ text "No registers"]
+
+        [] ->
+            [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString module_]
+viewModuleInfo : DefinitionState -> ChipCdef -> Html Msg
+viewModuleInfo state cdef =
     div [id "module-info"] <|
-        case state.selectedSignal of
-            Nothing ->
+        case state.highlight of
+            NoHighlight ->
                 [viewModulesOverview state]
-            Just signal ->
-                let
-                    chipModules = filter (\m -> m.name == signal.deviceModule) state.chipDefinition.modules
-                in
-                case chipModules of
-                    chipModule::_ ->
-                         [h2 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]]
-                         ++
-                         case chipModule.registerGroups of
-                             Just registerGroups ->
-                                 let
-                                     captionGroup =
-                                         case length registerGroups of
-                                             1 -> False
+            ModuleHoverHighlight _ ->
+                [viewModulesOverview state]
+            ModuleSelectHighlight module_ _ ->
+                viewModule state module_
+            RegisterHighlight _ module_ ->
+                viewModule state module_
+            BitfieldHighlight _ _ module_ ->
+                viewModule state module_
+            SignalHighlight _ module_ ->
+                viewModule state module_
 
-                                             _ -> True
-                                 in
-                                 map (lazy2 viewRegisterGroup captionGroup) registerGroups
-                             Nothing ->
-                                 [ text "No registers"]
-
-                    [] ->
-                        [text <| "No matching ChipModule found for DeviceModule " ++ Module.toString signal.deviceModule]
 
 flexBasis : Int -> List (Attribute Msg)
 flexBasis basis =
@@ -685,17 +768,20 @@ gridSpan length =
     style "grid-column-end" <| "span " ++ fromInt length
 
 
-viewBitfieldByte : BitfieldByte -> List (Html Msg)
-viewBitfieldByte bitfieldByte =
+viewBitfieldByte : Module -> Register -> BitfieldByte -> List (Html Msg)
+viewBitfieldByte deviceModule register bitfieldByte =
     case bitfieldByte of
         BitfieldByte byte bitfields ->
-            map (\f -> viewBitfieldOverview byte f) (fillBitfieldGaps byte bitfields)
+            map (viewBitfieldOverview deviceModule register byte) (fillBitfieldGaps byte bitfields)
 
-viewBitfieldOverview : Int -> BitfieldOverview -> Html Msg
-viewBitfieldOverview byte bitfieldOverview =
+viewBitfieldOverview : Module -> Register -> Int -> BitfieldOverview -> Html Msg
+viewBitfieldOverview deviceModule register byte bitfieldOverview =
     case bitfieldOverview of
         JustBitfield bitfield ->
-            Html.div [ class "bitfield-overview", gridSpan (bitLength bitfield.mask)] <|
+            Html.div [ class "bitfield-overview"
+                     , gridSpan (bitLength bitfield.mask)
+                     , onClick <| SetHighlight <| BitfieldHighlight bitfield register deviceModule
+                     ] <|
                 case bitfield.mask of
                     BitIndex index ->
                         [text bitfield.name]
@@ -751,17 +837,19 @@ splitBitfieldBytes bitfields =
     in
     List.map (\b -> BitfieldByte b <| List.map second <| List.filter (\fb -> first fb == b) fieldBytes) bytes
 
-viewRegisterOverivew : Register -> List (Html Msg)
-viewRegisterOverivew register =
+viewRegisterOverview : Module -> Register -> List (Html Msg)
+viewRegisterOverview deviceModule register =
     case register.bitfields of
         Just bitfields ->
-            concat <| map (\bitfieldByte -> div [class "bitfield-overview register-name"] [text register.name] :: viewBitfieldByte bitfieldByte) <| splitBitfieldBytes bitfields
+            concat <| map (\bitfieldByte -> div [class "bitfield-overview register-name"
+                                                , onClick <| SetHighlight <| RegisterHighlight register deviceModule
+                                                ] [text register.name] :: viewBitfieldByte deviceModule register bitfieldByte) <| splitBitfieldBytes bitfields
         Nothing ->
             [Html.div [] [text "No bitfields"]]
 
-viewRegisterGroupOverivew : RegisterGroup -> List (Html Msg)
-viewRegisterGroupOverivew registerGroup =
-    concat <| map viewRegisterOverivew registerGroup.registers
+viewRegisterGroupOverivew : Module -> RegisterGroup -> List (Html Msg)
+viewRegisterGroupOverivew deviceModule registerGroup =
+    concat <| map (viewRegisterOverview deviceModule) registerGroup.registers
 
 viewRegisterFieldHeader : List (Html Msg)
 viewRegisterFieldHeader =
@@ -770,13 +858,19 @@ viewRegisterFieldHeader =
     in
     template [text "Field"] :: map (\i -> template [text <| fromInt i]) (List.reverse <| List.range 0 7)
 
+
+viewModuleOverviewTable : ChipModule -> List RegisterGroup -> Html Msg
+viewModuleOverviewTable chipModule registerGroups =
+    div [ class "bitfield-grid"] (viewRegisterFieldHeader ++ (concat <| map (viewRegisterGroupOverivew chipModule.name) registerGroups))
+
+
 viewModuleOverview : ChipModule -> Maybe (Html Msg)
 viewModuleOverview chipModule =
     case chipModule.registerGroups of
         Just registerGroups ->
             Just <| div [ class "module-overview" ] <|
-                [ h3 [] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]
-                , div [ class "bitfield-grid"] (viewRegisterFieldHeader ++ (concat <| map viewRegisterGroupOverivew registerGroups))
+                [ h3 [onClick <| SetHighlight <| ModuleSelectHighlight chipModule.name chipModule.name] [ text <| Module.toString chipModule.name ++ " - " ++ chipModule.caption]
+                , viewModuleOverviewTable chipModule registerGroups
                 ]
 
         Nothing ->
@@ -899,7 +993,7 @@ viewModel model =
                     [ viewChipSelect state
                     , viewChip state cdef  (sortSignals (map .pad state.pinout.pins) (getSignalsFromDevice state state.device))
                     , div [id "info-row"]
-                         [ viewModule state cdef
+                         [ viewModuleInfo state cdef
                          , viewTome state cdef tome
                          ]
                     ]
