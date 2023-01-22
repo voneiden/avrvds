@@ -81,6 +81,14 @@ type HighlightMode
 type OverviewHighlight
     = OverviewHighlight Module Register BitMask
 
+-- Footprint ( Shows the footprint layout of the chip)
+-- Overview ( Shows the module/registry layout of the chip )
+-- Tome (Shows detailed information)
+
+-- Footprint: selecting a signal should select a module
+-- Overview: RegisterGroups should be displayed as tabs
+-- Overview: selecting a register should show information in the Tome
+-- Overview: selecting a bitfield should show information in the Tome
 
 
 -- | RegisterHighlight Register Module | BitfieldHighlight Bitfield Module
